@@ -62,12 +62,14 @@ export function ParticipantAvatar({
         <View
           className={`${dim.box} items-center justify-center rounded-full`}
           style={{ backgroundColor: color }}>
-          <Text className={`font-bold text-runtable-bg ${dim.text}`}>{initials(name)}</Text>
+          <Text className={`font-bold text-white ${dim.text}`}>{initials(name)}</Text>
         </View>
       </Animated.View>
       {isHost ? (
-        <View className="absolute -bottom-2 rounded-full border border-runtable-bg bg-runtable-accent px-1.5 py-0.5">
-          <Text className="text-[9px] font-bold text-runtable-bg">HOST</Text>
+        <View className="absolute -bottom-2 border border-white bg-black px-1.5 py-0.5">
+          <Text className="text-[8px] font-mono font-bold uppercase tracking-widest text-white">
+            HOST
+          </Text>
         </View>
       ) : null}
     </View>

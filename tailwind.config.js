@@ -12,12 +12,29 @@ module.exports = {
     extend: {
       colors: {
         runtable: {
-          bg: '#0B0F14',
-          card: '#131A22',
-          accent: '#7CFF6B',
-          muted: '#94A3B8',
-          warning: '#FFB020',
+          bg: '#000000',
+          card: '#0F0F0F',
+          surface: '#161616',
+          text: '#FFFFFF',
+          muted: '#CFCFCF',
+          faint: '#8B8B8B',
+          border: '#2A2A2A',
+          paper: '#ECEAE4',
+          ink: '#0A0A0A',
+          focus: '#FFFFFF',
+          /** Deprecated token: maps to neutral focus for fewer churned imports */
+          accent: '#FFFFFF',
+          warning: '#CFCFCF',
         },
+      },
+      fontFamily: {
+        pixel: ['PressStart2P_400Regular'],
+        mono: ['IBMPlexMono_400Regular'],
+        'mono-semibold': ['IBMPlexMono_600SemiBold'],
+      },
+      letterSpacing: {
+        thermal: '0.25em',
+        receipt: '0.12em',
       },
     },
   },

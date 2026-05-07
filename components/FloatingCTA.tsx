@@ -10,6 +10,8 @@ type FloatingCTAProps = PropsWithChildren<{
   disabled?: boolean;
 }>;
 
+const SPRING = { damping: 20, stiffness: 320 } as const;
+
 export function FloatingCTA({
   label,
   onPress,
@@ -17,38 +19,41 @@ export function FloatingCTA({
   disabled,
   children,
 }: FloatingCTAProps) {
-  const scale = useSharedValue(1);
+  const scaleY = useSharedValue(1);
 
   const animStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
+    transform: [{ scaleY: scaleY.value }],
+    opacity: disabled ? 0.4 : 1,
   }));
 
   const base =
-    variant === 'primary'
-      ? 'bg-runtable-accent shadow-lg shadow-runtable-accent/25'
-      : 'border border-white/15 bg-runtable-card';
+    variant === 'primary' ? 'border-2 border-white bg-white' : 'border border-runtable-border bg-runtable-card';
 
-  const textColor = variant === 'primary' ? 'text-runtable-bg' : 'text-white';
+  const textColor = variant === 'primary' ? 'text-runtable-bg' : 'text-runtable-text';
 
   return (
     <Pressable
       accessibilityRole="button"
       disabled={disabled}
-      style={{ width: '100%' }}
+      className="w-full"
       onPressIn={() => {
-        scale.value = withSpring(0.97, { damping: 18, stiffness: 320 });
+        scaleY.value = withSpring(0.96, SPRING);
+        if (!disabled) void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       }}
       onPressOut={() => {
-        scale.value = withSpring(1, { damping: 14, stiffness: 260 });
+        scaleY.value = withSpring(1, SPRING);
       }}
       onPress={() => {
-        void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+        void Haptics.selectionAsync();
         onPress();
       }}>
       <Animated.View style={animStyle}>
-        <View
-          className={`items-center justify-center rounded-3xl px-6 py-5 ${base} ${disabled ? 'opacity-40' : ''}`}>
-          <Text className={`text-center text-lg font-semibold ${textColor}`}>{label}</Text>
+        <View className={`items-center justify-center px-6 py-5 ${base}`}>
+          <Text
+            style={{ fontFamily: 'IBMPlexMono_600SemiBold' }}
+            className={`text-center text-[12px] uppercase tracking-[0.35em] ${textColor}`}>
+            {label}
+          </Text>
           {children}
         </View>
       </Animated.View>

@@ -1,19 +1,28 @@
-import { BlurView } from 'expo-blur';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
 import { useMemo } from 'react';
-import { Pressable, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
 
-import { GlassCard } from '@/components/GlassCard';
-import { WEATHER_CHIPS } from '@/mocks/fixtures';
+import { PixelButton } from '@/components/ui/PixelButton';
+import { ThermalCard } from '@/components/ui/ThermalCard';
+import { DottedDivider } from '@/components/ui/DottedDivider';
+import { buildReceiptParticipantLines } from '@/lib/receiptFormat';
 import { useRunTableStore } from '@/store';
 import type { Receipt } from '@/types';
 
-function formatDuration(ms: number): string {
+function formatDurationReceipt(ms: number): string {
+  const s = Math.floor(ms / 1000);
+  const h = Math.floor(s / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  const sec = s % 60;
+  return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${sec.toString().padStart(2, '0')}`;
+}
+
+function formatClockShort(ms: number): string {
   const s = Math.floor(ms / 1000);
   const m = Math.floor(s / 60);
   const sec = s % 60;
-  return `${m}:${sec.toString().padStart(2, '0')}`;
+  return `${m.toString().padStart(2, '0')}:${sec.toString().padStart(2, '0')}`;
 }
 
 export default function FinishRunModal() {
@@ -26,24 +35,27 @@ export default function FinishRunModal() {
   const polylineId = useRunTableStore((s) => s.currentPolylineId);
   const draftRun = useRunTableStore((s) => s.draftRun);
   const authUser = useRunTableStore((s) => s.authUser);
+  const leaderboard = useRunTableStore((s) => s.leaderboard);
   const addReceipt = useRunTableStore((s) => s.addReceipt);
   const resetActiveRun = useRunTableStore((s) => s.resetActiveRun);
 
-  const hostName =
-    participants.find((p) => p.id === hostId)?.name ?? authUser.displayName;
+  const hostName = participants.find((p) => p.id === hostId)?.name ?? authUser.displayName;
 
   const paceSummary = useMemo(() => {
-    if (!draftRun) return 'Moderate · group pace';
+    if (!draftRun) return "MOD ZONE · MOCK PACE";
     const map: Record<string, string> = {
-      easy: 'Easy · conversational',
-      moderate: 'Moderate · chatty tempo',
-      tempo: 'Tempo · focused push',
-      fast: 'Fast · sharp turnover',
+      easy: "EASY · 06'20\" AVG",
+      moderate: "MOD · 05'52\" AVG",
+      tempo: "TMP · 05'12\" AVG",
+      fast: "FAST · 04'40\" AVG",
     };
-    return map[draftRun.paceZone] ?? 'Pack pace';
+    return map[draftRun.paceZone] ?? 'PACK AVG';
   }, [draftRun]);
 
-  const weather = WEATHER_CHIPS[participants.length % WEATHER_CHIPS.length]!;
+  const weather = useMemo(() => {
+    const w = ['NIGHT · 26°C', 'HUMID · 29°C', 'DRY · 28°C'];
+    return w[participants.length % w.length]!;
+  }, [participants.length]);
 
   const finish = (closeOnly: boolean) => {
     void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -51,21 +63,30 @@ export default function FinishRunModal() {
       router.back();
       return;
     }
+    const lines = buildReceiptParticipantLines(leaderboard.length ? leaderboard : []);
     const receipt: Receipt = {
       id: `rc-${Date.now()}`,
-      routeName: routeName || 'RunTable Session',
+      routeName: (routeName || 'RUNTABLE SESSION').toUpperCase(),
       distanceKm,
-      durationLabel: formatDuration(Math.max(elapsedMs, 1000)),
+      durationLabel: formatDurationReceipt(Math.max(elapsedMs, 1000)),
       paceSummary,
-      completedAt: new Date().toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }),
+      completedAt: new Date().toISOString(),
       hostName,
       participantIds: participants.map((p) => p.id),
+      participantLines: lines.length
+        ? lines
+        : participants.map((p, idx) => ({
+            rank: idx + 1,
+            displayName: p.name.toUpperCase(),
+            paceQuote: "06'05\"",
+          })),
+      runnerCountLabel: `${participants.length} PARTICIPANTS`,
       polylineId,
       weatherLabel: weather,
       badges: [
-        { id: '1', label: 'Pack sync' },
-        { id: '2', label: 'Cheer cannon' },
-        { id: '3', label: 'Neon finish' },
+        { id: '1', label: 'CHECKPOINT' },
+        { id: '2', label: 'PACK SYNC' },
+        { id: '3', label: 'ARCHIVE READY' },
       ],
     };
     addReceipt(receipt);
@@ -75,41 +96,52 @@ export default function FinishRunModal() {
   };
 
   return (
-    <View className="flex-1 justify-end bg-black/70">
-      <BlurView intensity={30} tint="dark" style={{ position: 'absolute', inset: 0 }} />
-      <GlassCard className="mx-4 mb-10 overflow-hidden rounded-[32px]">
-        <View className="gap-2 p-6">
-          <Text className="text-center text-xs font-semibold uppercase tracking-[0.3em] text-runtable-muted">
-            End run?
+    <View className="flex-1 justify-end bg-black/90">
+      <View className="w-full px-5 pb-10">
+        <ThermalCard elevated className="border-white/20 px-6 py-8">
+          <Text
+            style={{ fontFamily: 'IBMPlexMono_400Regular' }}
+            className="text-center text-[10px] uppercase tracking-[0.45em] text-runtable-faint">
+            CHECKPOINT
           </Text>
-          <Text className="text-center text-3xl font-bold text-white">Nice miles.</Text>
-          <Text className="text-center text-runtable-muted">
-            {participants.length} runners at the table
+          <Text
+            style={{ fontFamily: 'PressStart2P_400Regular' }}
+            className="mt-4 text-center text-[12px] leading-relaxed tracking-widest text-runtable-text">
+            SESSION END?
+          </Text>
+          <Text style={{ fontFamily: 'IBMPlexMono_400Regular' }} className="mt-3 text-center text-[11px] text-runtable-muted">
+            {participants.length} RUNNERS · MOCK CONFIRMATION
           </Text>
 
-          <View className="mt-4 flex-row gap-3">
-            <View className="flex-1 rounded-2xl bg-white/5 p-4">
-              <Text className="text-xs text-runtable-muted">Time</Text>
-              <Text className="mt-2 text-2xl font-bold text-white">{formatDuration(elapsedMs)}</Text>
+          <DottedDivider className="my-6" />
+
+          <View className="flex-row gap-3">
+            <View className="flex-1 border border-runtable-border bg-black px-4 py-3">
+              <Text style={{ fontFamily: 'IBMPlexMono_400Regular' }} className="text-[9px] uppercase tracking-[0.3em] text-runtable-faint">
+                DIST
+              </Text>
+              <Text style={{ fontFamily: 'IBMPlexMono_600SemiBold' }} className="mt-2 text-[18px] text-runtable-text">
+                {distanceKm.toFixed(2)}
+              </Text>
+              <Text style={{ fontFamily: 'IBMPlexMono_400Regular' }} className="mt-1 text-[9px] text-runtable-muted">
+                KM
+              </Text>
             </View>
-            <View className="flex-1 rounded-2xl bg-white/5 p-4">
-              <Text className="text-xs text-runtable-muted">Distance</Text>
-              <Text className="mt-2 text-2xl font-bold text-white">{distanceKm} km</Text>
+            <View className="flex-1 border border-runtable-border bg-black px-4 py-3">
+              <Text style={{ fontFamily: 'IBMPlexMono_400Regular' }} className="text-[9px] uppercase tracking-[0.3em] text-runtable-faint">
+                TIME
+              </Text>
+              <Text style={{ fontFamily: 'IBMPlexMono_600SemiBold' }} className="mt-2 text-[18px] text-runtable-text">
+                {formatClockShort(elapsedMs)}
+              </Text>
             </View>
           </View>
 
-          <Pressable
-            onPress={() => finish(true)}
-            className="mt-4 rounded-3xl border border-white/15 py-4 active:bg-white/5">
-            <Text className="text-center text-base font-semibold text-white">Keep running</Text>
-          </Pressable>
-          <Pressable
-            onPress={() => finish(false)}
-            className="rounded-3xl bg-runtable-accent py-4 active:opacity-90">
-            <Text className="text-center text-base font-semibold text-runtable-bg">Finish run</Text>
-          </Pressable>
-        </View>
-      </GlassCard>
+          <PixelButton variant="outline" className="mt-6 border-runtable-border" label="KEEP RUNNING" onPress={() => finish(true)} />
+
+          <PixelButton variant="solid" className="mt-4" label="FINISH RUN" onPress={() => finish(false)} />
+        </ThermalCard>
+      </View>
     </View>
   );
 }

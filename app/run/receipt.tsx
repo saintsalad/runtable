@@ -1,192 +1,170 @@
-import { BlurView } from 'expo-blur';
-import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { Camera, Share2, UploadCloud } from 'lucide-react-native';
-import { useMemo } from 'react';
-import { Pressable, ScrollView, Text, View } from 'react-native';
-import Animated, { FadeInDown } from 'react-native-reanimated';
-import Svg, { Polyline } from 'react-native-svg';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useEffect, useMemo } from 'react';
+import { ScrollView, Text, View } from 'react-native';
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withSequence,
+  withTiming,
+  withSpring,
+  Easing,
+} from 'react-native-reanimated';
 
-import { GlassCard } from '@/components/GlassCard';
-import { ParticipantAvatar } from '@/components/ParticipantAvatar';
+import { ReceiptParticipants } from '@/components/receipt/ReceiptParticipants';
+import { ReceiptRoute } from '@/components/receipt/ReceiptRoute';
+import { ReceiptStats } from '@/components/receipt/ReceiptStats';
+import { NoiseOverlay } from '@/components/ui/NoiseOverlay';
+import { ScanlineOverlay } from '@/components/ui/ScanlineOverlay';
+import { Header } from '@/components/ui/Header';
+import { ReceiptPaper } from '@/components/ui/ReceiptPaper';
+import { PixelButton } from '@/components/ui/PixelButton';
+import { ThermalCard } from '@/components/ui/ThermalCard';
 import { RUNTABLE_COLORS } from '@/constants/runtable';
-import { polylineById, regionForPolyline } from '@/mocks/routes';
 import { useRunTableStore } from '@/store';
-import type { Receipt } from '@/types';
-
-function buildPoints(polylineId: string): string {
-  const coords = polylineById(polylineId);
-  const region = regionForPolyline(coords);
-  return coords
-    .map((c) => {
-      const x = ((c.longitude - region.longitude) / region.longitudeDelta + 0.5) * 120;
-      const y = (0.5 - (c.latitude - region.latitude) / region.latitudeDelta) * 80;
-      return `${x},${y}`;
-    })
-    .join(' ');
-}
 
 export default function RunReceiptScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id?: string }>();
   const receipts = useRunTableStore((s) => s.receipts);
-  const participants = useRunTableStore((s) => s.participants);
 
-  const receipt: Receipt | undefined = useMemo(() => {
+  const offsetY = useSharedValue(620);
+  const drift = useSharedValue(0);
+  const scan = useSharedValue(0);
+
+  useEffect(() => {
+    offsetY.value = withSpring(0, { damping: 16, stiffness: 88 });
+    drift.value = withSequence(withTiming(2.5, { duration: 60 }), withTiming(0, { duration: 380 }));
+    scan.value = withTiming(1, { duration: 980, easing: Easing.out(Easing.cubic) });
+  }, [drift, offsetY, scan]);
+
+  const slipStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: offsetY.value }, { translateX: drift.value }],
+  }));
+
+  const scanStyle = useAnimatedStyle(() => ({
+    opacity: 0.12 * (1 - scan.value),
+  }));
+
+  const receipt = useMemo(() => {
     if (id) return receipts.find((r) => r.id === id);
     return receipts[0];
   }, [id, receipts]);
 
-  const polyPoints = useMemo(
-    () => buildPoints(receipt?.polylineId ?? 'bgc_loop'),
-    [receipt?.polylineId]
-  );
-
   if (!receipt) {
     return (
-      <SafeAreaView className="flex-1 items-center justify-center bg-runtable-bg px-8">
-        <Text className="text-center text-lg font-semibold text-white">No receipt yet</Text>
-        <Text className="mt-2 text-center text-runtable-muted">
-          Finish a run to mint your collectible ticket — or start a fresh table.
+      <View className="flex-1 items-center justify-center bg-runtable-bg px-8">
+        <Text style={{ fontFamily: 'IBMPlexMono_600SemiBold' }} className="text-[13px] uppercase text-runtable-text">
+          NO RECEIPT YET
         </Text>
-        <Pressable
-          onPress={() => router.replace('/run/create')}
-          className="mt-6 rounded-3xl bg-runtable-accent px-6 py-4">
-          <Text className="font-semibold text-runtable-bg">Create a run</Text>
-        </Pressable>
-      </SafeAreaView>
+        <Text style={{ fontFamily: 'IBMPlexMono_400Regular' }} className="mt-4 text-center text-[11px] text-runtable-faint">
+          FINISH A RUN TO MINT A THERMAL TICKET OR START CONFIG FROM HOME.
+        </Text>
+      </View>
     );
   }
 
-  const crew = participants.filter((p) => receipt.participantIds.includes(p.id));
+  const distLabel = `${receipt.distanceKm.toFixed(2).padStart(5, '0')} KM`;
+
+  let stampDate: string;
+  try {
+    stampDate = new Date(receipt.completedAt).toLocaleString(undefined, {
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  } catch {
+    stampDate = receipt.completedAt;
+  }
 
   return (
-    <SafeAreaView className="flex-1 bg-runtable-bg" edges={['top', 'bottom']}>
-      <ScrollView contentContainerStyle={{ padding: 24, paddingBottom: 48 }}>
-        <Animated.View entering={FadeInDown.duration(520).springify()}>
-          <LinearGradient
-            colors={['#162031', '#0b0f14', '#132018']}
-            style={{ borderRadius: 36, overflow: 'hidden', borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)' }}>
-            <View className="absolute inset-0 opacity-30">
-              <LinearGradient
-                colors={['rgba(124,255,107,0.15)', 'transparent', 'rgba(255,255,255,0.04)']}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={{ flex: 1 }}
-              />
-            </View>
-            <View className="absolute inset-0 opacity-[0.07]">
-              {Array.from({ length: 5 }).map((_, i) => (
-                <View
-                  key={i}
-                  className="absolute h-px w-full bg-white"
-                  style={{ top: `${15 + i * 18}%`, opacity: 0.4 }}
-                />
-              ))}
-            </View>
+    <View className="flex-1 bg-black">
+      <NoiseOverlay opacity={0.035} />
+      <ScanlineOverlay step={6} />
 
-            <View className="p-8">
-              <Text className="text-xs font-semibold uppercase tracking-[0.35em] text-runtable-muted">
-                Run receipt
+      <Header title="GROUP RECEIPT" onBackPress={() => router.replace('/')} />
+
+      <ScrollView contentContainerStyle={{ paddingBottom: 48, paddingTop: 12 }} className="flex-1 px-4">
+        <View className="relative items-center">
+          <Animated.View style={scanStyle} className="pointer-events-none absolute inset-x-0 top-0 z-20 h-16 bg-white" />
+          <Animated.View style={slipStyle} className="w-full max-w-[360px]">
+            <ReceiptPaper>
+              <Text
+                style={{ fontFamily: 'PressStart2P_400Regular', color: RUNTABLE_COLORS.ink }}
+                className="text-center text-[11px] uppercase leading-relaxed">
+                RUN TABLE
               </Text>
-              <Text className="mt-3 text-3xl font-black text-white">{receipt.routeName}</Text>
+              <Text
+                style={{ fontFamily: 'IBMPlexMono_400Regular', color: RUNTABLE_COLORS.ink }}
+                className="mt-3 text-center text-[10px] uppercase tracking-[0.4em]">
+                GROUP RUN RECEIPT
+              </Text>
+
+              <View className="my-5 h-px bg-black/15" />
+
+              <ReceiptStats
+                routeLabel={receipt.routeName}
+                distanceLabel={distLabel}
+                timeLabel={receipt.durationLabel}
+                paceLabel={receipt.paceSummary}
+                runnersLabel={
+                  receipt.runnerCountLabel ?? `${receipt.participantIds.length} PARTICIPANTS`
+                }
+              />
+
+              <View className="mt-4">
+                <ReceiptRoute polylineId={receipt.polylineId} height={132} />
+              </View>
+
+              <ReceiptParticipants lines={receipt.participantLines ?? []} />
+
+              <View className="mt-5 border border-dashed border-black/25 bg-black/5 px-3 py-2">
+                <Text style={{ fontFamily: 'IBMPlexMono_400Regular' }} className="text-[9px] uppercase tracking-[0.35em] text-black/50">
+                  WEATHER / STAMP
+                </Text>
+                <Text style={{ fontFamily: 'IBMPlexMono_400Regular' }} className="mt-2 text-[11px] text-runtable-ink">
+                  {receipt.weatherLabel ?? '—'}
+                </Text>
+                <Text style={{ fontFamily: 'IBMPlexMono_400Regular' }} className="mt-2 text-[10px] text-black/45">
+                  {stampDate}
+                </Text>
+              </View>
+
               <View className="mt-4 flex-row flex-wrap gap-2">
-                <View className="rounded-full border border-white/10 bg-white/5 px-3 py-1">
-                  <Text className="text-xs font-semibold text-runtable-accent">{receipt.weatherLabel}</Text>
-                </View>
                 {receipt.badges.map((b) => (
-                  <View key={b.id} className="rounded-full border border-runtable-accent/25 bg-runtable-accent/10 px-3 py-1">
-                    <Text className="text-xs font-semibold text-runtable-accent">{b.label}</Text>
+                  <View key={b.id} className="border border-black/25 px-2 py-1">
+                    <Text style={{ fontFamily: 'IBMPlexMono_600SemiBold' }} className="text-[9px] uppercase text-runtable-ink">
+                      {b.label}
+                    </Text>
                   </View>
                 ))}
               </View>
 
-              <GlassCard className="mt-6 overflow-hidden">
-                <View className="p-4">
-                  <Svg width="100%" height={140} viewBox="0 0 120 80">
-                    <Polyline
-                      points={polyPoints}
-                      fill="none"
-                      stroke={RUNTABLE_COLORS.accent}
-                      strokeWidth={3}
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  </Svg>
-                </View>
-              </GlassCard>
-
-              <View className="mt-6 flex-row gap-4">
-                <View className="flex-1 rounded-3xl bg-white/5 p-4">
-                  <Text className="text-xs text-runtable-muted">Distance</Text>
-                  <Text className="mt-2 text-3xl font-bold text-white">{receipt.distanceKm} km</Text>
-                </View>
-                <View className="flex-1 rounded-3xl bg-white/5 p-4">
-                  <Text className="text-xs text-runtable-muted">Time</Text>
-                  <Text className="mt-2 text-3xl font-bold text-white">{receipt.durationLabel}</Text>
-                </View>
+              <View className="mt-8 items-center border-t border-dashed border-black/20 pt-4">
+                <Text style={{ fontFamily: 'IBMPlexMono_400Regular' }} className="text-[9px] uppercase tracking-[0.45em] text-black/40">
+                  ··· CUT HERE ···
+                </Text>
               </View>
-
-              <View className="mt-6">
-                <Text className="text-xs uppercase tracking-widest text-runtable-muted">Pace story</Text>
-                <Text className="mt-2 text-lg font-semibold text-white">{receipt.paceSummary}</Text>
-              </View>
-
-              <View className="mt-6 flex-row items-center justify-between rounded-3xl bg-black/30 p-4">
-                <View>
-                  <Text className="text-xs text-runtable-muted">Hosted by</Text>
-                  <Text className="mt-1 text-base font-semibold text-white">{receipt.hostName}</Text>
-                </View>
-                <BlurView intensity={20} tint="dark" className="overflow-hidden rounded-2xl border border-dashed border-white/15 px-4 py-3">
-                  <Camera color="#94A3B8" size={22} />
-                </BlurView>
-              </View>
-
-              <Text className="mt-6 text-xs uppercase tracking-widest text-runtable-muted">Crew</Text>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mt-3">
-                <View className="flex-row gap-3 pr-4">
-                  {crew.length
-                    ? crew.map((p) => (
-                        <ParticipantAvatar key={p.id} name={p.name} color={p.avatarColor} size="md" isHost={p.isHost} />
-                      ))
-                    : receipt.participantIds.map((pid, idx) => (
-                        <ParticipantAvatar
-                          key={pid}
-                          name={`Runner ${idx + 1}`}
-                          color={['#7CFF6B', '#38BDF8', '#F472B6'][idx % 3]!}
-                          size="md"
-                        />
-                      ))}
-                </View>
-              </ScrollView>
-
-              <Text className="mt-4 text-center text-xs text-runtable-muted">{receipt.completedAt}</Text>
-            </View>
-          </LinearGradient>
-        </Animated.View>
-
-        <View className="mt-6 gap-3">
-          <Pressable
-            onPress={() => void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)}
-            className="rounded-3xl bg-runtable-accent py-4 active:opacity-90">
-            <Text className="text-center text-base font-semibold text-runtable-bg">Save receipt</Text>
-          </Pressable>
-          <Pressable
-            onPress={() => void Haptics.selectionAsync()}
-            className="flex-row items-center justify-center gap-2 rounded-3xl border border-white/15 py-4 active:bg-white/5">
-            <Share2 color="#7CFF6B" size={18} />
-            <Text className="text-center text-base font-semibold text-white">Share receipt</Text>
-          </Pressable>
-          <Pressable
-            disabled
-            className="flex-row items-center justify-center gap-2 rounded-3xl border border-white/5 bg-white/5 py-4 opacity-40">
-            <UploadCloud color="#94A3B8" size={18} />
-            <Text className="text-center text-base font-semibold text-runtable-muted">Upload to Strava</Text>
-          </Pressable>
+            </ReceiptPaper>
+          </Animated.View>
         </View>
+
+        <ThermalCard className="mx-4 mt-8 px-5 py-4">
+          <Text style={{ fontFamily: 'IBMPlexMono_400Regular' }} className="text-[10px] uppercase tracking-[0.32em] text-runtable-muted">
+            PRINTER CONTROLS
+          </Text>
+          <View className="mt-4 gap-3">
+            <PixelButton
+              variant="solid"
+              label="SAVE SLIP"
+              onPress={() => void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)}
+            />
+            <PixelButton variant="outline" label="SHARE ROUTE MEMORY" onPress={() => void Haptics.selectionAsync()} />
+            <PixelButton variant="outline" disabled label="STRAVA" onPress={() => undefined} />
+          </View>
+        </ThermalCard>
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }

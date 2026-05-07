@@ -46,7 +46,7 @@ export interface LeaderboardEntry {
 
 export interface CheerEvent {
   id: string;
-  emoji: string;
+  glyph: string;
   createdAt: number;
 }
 
@@ -54,6 +54,12 @@ export interface RouteMeta {
   id: string;
   name: string;
   distanceKm: number;
+}
+
+export interface ReceiptParticipantLine {
+  rank: number;
+  displayName: string;
+  paceQuote: string;
 }
 
 export interface ReceiptBadge {
@@ -70,8 +76,10 @@ export interface Receipt {
   completedAt: string;
   hostName: string;
   participantIds: string[];
+  participantLines?: ReceiptParticipantLine[];
+  runnerCountLabel?: string;
   polylineId: string;
-  weatherLabel: string;
+  weatherLabel?: string;
   badges: ReceiptBadge[];
 }
 

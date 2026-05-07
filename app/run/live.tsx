@@ -1,17 +1,18 @@
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
-import { Pause, Play, SmilePlus, StepBack } from 'lucide-react-native';
+import { Pause, Play, StepBack } from 'lucide-react-native';
 import { useCallback, useMemo, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { GlassCard } from '@/components/GlassCard';
 import { LeaderboardItem } from '@/components/LeaderboardItem';
-import { PackTrack } from '@/features/live/PackTrack';
+import { PackTracker } from '@/components/run/PackTracker';
+import { Header } from '@/components/ui/Header';
+import { ThermalCard } from '@/components/ui/ThermalCard';
+import { DottedDivider } from '@/components/ui/DottedDivider';
 import { useLiveRealtime } from '@/hooks/useMockRealtime';
 import { useRunTableStore } from '@/store';
 
-const CHEERS = ['🔥', '⚡', '✨', '💚', '🙌', '✌️'];
+const GLYPHS = ['◇', '◆', '▓', '▪'];
 
 export default function LiveRunScreen() {
   const router = useRouter();
@@ -34,116 +35,157 @@ export default function LiveRunScreen() {
     const s = Math.floor(elapsedMs / 1000);
     const m = Math.floor(s / 60);
     const sec = s % 60;
-    return `${m}:${sec.toString().padStart(2, '0')}`;
+    return `${m.toString().padStart(2, '0')}:${sec.toString().padStart(2, '0')}`;
   }, [elapsedMs]);
+
+  const progressKm = useMemo(() => {
+    const vals = participants.map((p) => (packPositions[p.id] ?? 0) * distanceKm);
+    if (!vals.length) return distanceKm * 0.18;
+    return Math.max(...vals);
+  }, [distanceKm, packPositions, participants]);
 
   const openFinish = useCallback(() => router.push('/run/finish'), [router]);
 
   return (
-    <SafeAreaView className="flex-1 bg-runtable-bg" edges={['top']}>
-      <View className="px-6 pb-3 pt-3">
-        <Text className="text-xs font-semibold uppercase tracking-[0.2em] text-runtable-muted">Live pack</Text>
+    <View className="flex-1 bg-runtable-bg">
+      <Header title="LIVE · PACK" onBackPress={() => router.back()} />
+
+      <View className="px-6 pb-3 pt-1">
+        <Text style={{ fontFamily: 'IBMPlexMono_400Regular' }} className="text-[10px] uppercase tracking-[0.35em] text-runtable-faint">
+          ELAPSED
+        </Text>
         <View className="mt-2 flex-row items-end justify-between">
-          <Text className="text-4xl font-black text-white">{formattedTime}</Text>
+          <Text style={{ fontFamily: 'IBMPlexMono_600SemiBold' }} className="text-[36px] text-runtable-text">
+            {formattedTime}
+          </Text>
           <View className="items-end">
-            <Text className="text-xs text-runtable-muted">Pace pulse</Text>
-            <Text className="text-lg font-semibold text-runtable-accent">{currentPaceLabel}</Text>
+            <Text style={{ fontFamily: 'IBMPlexMono_400Regular' }} className="text-[9px] uppercase tracking-[0.3em] text-runtable-faint">
+              PULSE / KM
+            </Text>
+            <Text style={{ fontFamily: 'IBMPlexMono_600SemiBold' }} className="text-[13px] text-runtable-muted">
+              {currentPaceLabel}
+            </Text>
           </View>
         </View>
       </View>
 
-      <GlassCard className="mx-6 mb-4 overflow-hidden">
-        <View className="p-4">
-          <Text className="text-sm text-runtable-muted">Route energy</Text>
-          <PackTrack participants={participants} positions={packPositions} />
+      <ThermalCard className="mx-6 mb-4 border-runtable-border p-4">
+        <Text style={{ fontFamily: 'IBMPlexMono_400Regular' }} className="mb-4 text-[10px] uppercase tracking-[0.3em] text-runtable-muted">
+          HORIZONTAL PACK TRACK
+        </Text>
+        <PackTracker participants={participants} positions={packPositions} height={118} />
+        <DottedDivider className="mt-6" />
+        <View className="mt-4 flex-row justify-between">
+          <View>
+            <Text style={{ fontFamily: 'IBMPlexMono_400Regular' }} className="text-[9px] uppercase text-runtable-faint">
+              MOCK DIST
+            </Text>
+            <Text style={{ fontFamily: 'IBMPlexMono_600SemiBold' }} className="text-[13px] text-runtable-text">
+              {progressKm.toFixed(2)} KM
+            </Text>
+          </View>
+          <View className="items-end">
+            <Text style={{ fontFamily: 'IBMPlexMono_400Regular' }} className="text-[9px] uppercase text-runtable-faint">
+              TARGET
+            </Text>
+            <Text style={{ fontFamily: 'IBMPlexMono_600SemiBold' }} className="text-[13px] text-runtable-text">
+              {distanceKm.toFixed(2)} KM
+            </Text>
+          </View>
         </View>
-      </GlassCard>
+      </ThermalCard>
 
-      <View className="px-6">
-        <View className="mb-2 flex-row items-center justify-between">
-          <Text className="text-lg font-semibold text-white">Leaderboard</Text>
-          <Pressable onPress={() => setSheetOpen((v) => !v)}>
-            <Text className="text-sm font-semibold text-runtable-accent">{sheetOpen ? 'Hide' : 'Stats'}</Text>
+      <View className="flex-1 px-6 pb-52">
+        <View className="mb-3 flex-row items-center justify-between">
+          <Text style={{ fontFamily: 'IBMPlexMono_600SemiBold' }} className="text-[11px] uppercase tracking-[0.28em] text-runtable-muted">
+            ORDER WINDOW
+          </Text>
+          <Pressable hitSlop={8} onPress={() => setSheetOpen((v) => !v)}>
+            <Text style={{ fontFamily: 'IBMPlexMono_600SemiBold' }} className="text-[10px] uppercase text-runtable-faint">
+              {sheetOpen ? 'CLOSE STATS' : 'OPEN STATS'}
+            </Text>
           </Pressable>
         </View>
         {leaderboard.slice(0, 5).map((entry) => (
           <LeaderboardItem key={entry.participantId} entry={entry} />
         ))}
-      </View>
-
-      {sheetOpen ? (
-        <View className="mt-4 px-6">
-          <GlassCard className="p-4">
-            <Text className="text-lg font-semibold text-white">Pack stats</Text>
-            <Text className="mt-1 text-sm text-runtable-muted">
-              Distance is approximate — tuned for social energy, not splits.
+        {sheetOpen ? (
+          <ThermalCard className="mt-4 p-4">
+            <Text style={{ fontFamily: 'IBMPlexMono_600SemiBold' }} className="text-[11px] uppercase text-runtable-muted">
+              PACK METRICS · MOCK STREAM
+            </Text>
+            <Text style={{ fontFamily: 'IBMPlexMono_400Regular' }} className="mt-2 text-[10px] text-runtable-faint">
+              BELIEVABLE JITTERS ONLY — NO GPS LOCK
             </Text>
             <View className="mt-4 gap-3">
               {participants.slice(0, 6).map((p) => (
                 <View
                   key={p.id}
-                  className="flex-row items-center justify-between rounded-2xl border border-white/5 bg-white/5 px-3 py-2">
+                  className="flex-row items-center justify-between border border-runtable-border bg-runtable-surface px-3 py-2">
                   <View>
-                    <Text className="font-semibold text-white">{p.name}</Text>
-                    <Text className="text-xs text-runtable-muted">Streak cheers · On pace</Text>
+                    <Text style={{ fontFamily: 'IBMPlexMono_600SemiBold' }} className="text-[11px] uppercase text-runtable-text">
+                      {p.name}
+                    </Text>
+                    <Text style={{ fontFamily: 'IBMPlexMono_400Regular' }} className="text-[9px] text-runtable-faint">
+                      POSITION DRIFT MOCK
+                    </Text>
                   </View>
-                  <Text className="text-sm font-semibold text-runtable-accent">
-                    {(packPositions[p.id] ?? 0) * distanceKm < 0.4 * distanceKm
-                      ? 'Warmup'
-                      : (packPositions[p.id] ?? 0) * distanceKm < 0.75 * distanceKm
-                        ? 'Locked in'
-                        : 'Closing'}
+                  <Text style={{ fontFamily: 'IBMPlexMono_400Regular' }} className="text-[11px] text-runtable-muted">
+                    {((packPositions[p.id] ?? 0) * 100).toFixed(0)}%
                   </Text>
                 </View>
               ))}
             </View>
-          </GlassCard>
-        </View>
-      ) : null}
+          </ThermalCard>
+        ) : null}
+      </View>
 
-      <View className="pointer-events-none absolute inset-0 items-center justify-start pt-52">
+      <View className="pointer-events-none absolute inset-0 items-center justify-start pt-48">
         {cheerEvents.slice(-6).map((c, idx) => (
           <Text
             key={c.id}
-            className="absolute text-4xl"
-            style={{ top: 120 + idx * 36, transform: [{ rotate: `${(idx % 2) * 6}deg` }] }}>
-            {c.emoji}
+            className="absolute font-mono text-[30px] text-runtable-text"
+            style={{ top: 120 + idx * 40, opacity: 0.55 }}>
+            {c.glyph}
           </Text>
         ))}
       </View>
 
-      <View className="mt-auto flex-row items-center justify-between px-6 pb-4">
-        <Pressable
-          onPress={() => router.back()}
-          className="h-14 w-14 items-center justify-center rounded-2xl border border-white/10 bg-runtable-card active:opacity-90">
-          <StepBack color="#94A3B8" size={22} />
-        </Pressable>
-        <Pressable
-          onPress={() => {
-            void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-            togglePause();
-          }}
-          className="h-14 w-14 items-center justify-center rounded-2xl border border-runtable-accent/40 bg-runtable-accent/15 active:opacity-90">
-          {paused ? <Play color="#7CFF6B" size={22} /> : <Pause color="#7CFF6B" size={22} />}
-        </Pressable>
-        <Pressable
-          onPress={() => {
-            void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-            const emoji = CHEERS[(cheerEvents.length + formattedTime.length) % CHEERS.length]!;
-            addCheer(emoji);
-          }}
-          className="h-14 w-14 items-center justify-center rounded-2xl border border-white/10 bg-runtable-card active:opacity-90">
-          <SmilePlus color="#7CFF6B" size={22} />
-        </Pressable>
-      </View>
-
-      <View className="px-6 pb-8">
+      <View className="absolute bottom-0 left-0 right-0 border-t border-runtable-border bg-runtable-bg px-6 pb-6 pt-3">
+        <View className="flex-row items-center justify-between">
+          <Pressable
+            onPress={() => router.back()}
+            className="h-14 w-14 items-center justify-center border border-runtable-border bg-runtable-card active:opacity-80">
+            <StepBack color="#CFCFCF" size={22} strokeWidth={1.3} />
+          </Pressable>
+          <Pressable
+            onPress={() => {
+              void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              togglePause();
+            }}
+            className="h-14 w-14 items-center justify-center border border-runtable-border bg-runtable-surface active:opacity-80">
+            {paused ? <Play color="#FFFFFF" size={22} /> : <Pause color="#FFFFFF" size={22} />}
+          </Pressable>
+          <Pressable
+            onPress={() => {
+              void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+              const g = GLYPHS[(cheerEvents.length + formattedTime.length) % GLYPHS.length] ?? '◇';
+              addCheer(g);
+            }}
+            className="h-14 w-14 items-center justify-center border border-runtable-border bg-runtable-card active:opacity-80">
+            <Text style={{ fontFamily: 'IBMPlexMono_600SemiBold' }} className="text-[16px] text-runtable-text">
+              !
+            </Text>
+          </Pressable>
+        </View>
         <Pressable
           onPress={openFinish}
-          className="rounded-3xl border border-white/10 py-4 active:bg-white/5">
-          <Text className="text-center text-base font-semibold text-white">End run</Text>
+          className="mt-4 border border-runtable-border py-4 active:bg-runtable-surface">
+          <Text style={{ fontFamily: 'IBMPlexMono_600SemiBold' }} className="text-center text-[11px] uppercase tracking-[0.32em] text-runtable-muted">
+            END RUN
+          </Text>
         </Pressable>
       </View>
-    </SafeAreaView>
+    </View>
   );
 }

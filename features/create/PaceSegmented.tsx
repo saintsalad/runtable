@@ -1,6 +1,6 @@
+import * as Haptics from 'expo-haptics';
 import { PACE_ZONE_ORDER } from '@/constants/runtable';
 import type { PaceZone } from '@/types';
-import * as Haptics from 'expo-haptics';
 import { memo, useMemo } from 'react';
 import { LayoutChangeEvent, Pressable, Text, View } from 'react-native';
 import Animated, {
@@ -10,10 +10,10 @@ import Animated, {
 } from 'react-native-reanimated';
 
 const LABELS: Record<PaceZone, string> = {
-  easy: 'Easy',
-  moderate: 'Moderate',
-  tempo: 'Tempo',
-  fast: 'Fast',
+  easy: 'EASY',
+  moderate: 'MOD',
+  tempo: 'TMP',
+  fast: 'FAST',
 };
 
 type PaceSegmentedProps = {
@@ -26,7 +26,7 @@ export const PaceSegmented = memo(function PaceSegmented({ value, onChange }: Pa
   const slide = useSharedValue(index);
   const rowWidth = useSharedValue(0);
 
-  slide.value = withSpring(index, { damping: 18, stiffness: 220 });
+  slide.value = withSpring(index, { damping: 20, stiffness: 220 });
 
   const onLayout = (e: LayoutChangeEvent) => {
     rowWidth.value = e.nativeEvent.layout.width;
@@ -36,17 +36,17 @@ export const PaceSegmented = memo(function PaceSegmented({ value, onChange }: Pa
     const w = rowWidth.value;
     const segment = w > 0 ? w / PACE_ZONE_ORDER.length : 0;
     return {
-      width: Math.max(segment - 8, 0),
-      transform: [{ translateX: slide.value * segment + 4 }],
+      width: Math.max(segment - 10, 0),
+      transform: [{ translateX: slide.value * segment + 5 }],
     };
   });
 
   return (
-    <View className="rounded-3xl bg-white/5 p-1">
-      <View className="relative overflow-hidden rounded-3xl" onLayout={onLayout}>
+    <View className="border border-runtable-border bg-runtable-card p-[3px]">
+      <View className="relative overflow-hidden" onLayout={onLayout}>
         <Animated.View
           style={pillStyle}
-          className="absolute left-0 top-1 bottom-1 rounded-2xl bg-runtable-accent/25"
+          className="absolute left-0 top-0 bottom-0 bg-white"
         />
         <View className="z-10 flex-row">
           {PACE_ZONE_ORDER.map((z) => {
@@ -58,11 +58,10 @@ export const PaceSegmented = memo(function PaceSegmented({ value, onChange }: Pa
                   void Haptics.selectionAsync();
                   onChange(z);
                 }}
-                className="flex-1 items-center py-3">
+                className="flex-1 items-center py-3.5">
                 <Text
-                  className={`text-sm font-semibold ${
-                    active ? 'text-runtable-accent' : 'text-runtable-muted'
-                  }`}>
+                  style={{ fontFamily: 'IBMPlexMono_600SemiBold' }}
+                  className={`text-[10px] uppercase tracking-[0.24em] ${active ? 'text-black' : 'text-runtable-faint'}`}>
                   {LABELS[z]}
                 </Text>
               </Pressable>

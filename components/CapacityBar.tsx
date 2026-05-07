@@ -1,6 +1,7 @@
 import { Text, View } from 'react-native';
 
-import { GlassCard } from '@/components/GlassCard';
+import { ThermalCard } from '@/components/ui/ThermalCard';
+import { RUNTABLE_COLORS } from '@/constants/runtable';
 
 type CapacityBarProps = {
   filled: number;
@@ -12,20 +13,19 @@ export function CapacityBar({ filled, capacity }: CapacityBarProps) {
   const dense = capacity > 12;
 
   return (
-    <GlassCard className="px-4 py-3">
+    <ThermalCard className="px-4 py-3">
       <View className="mb-2 flex-row items-center justify-between">
-        <Text className="text-xs font-medium text-runtable-muted">Pack fill</Text>
-        <Text className="text-xs font-semibold text-white">
+        <Text style={{ fontFamily: 'IBMPlexMono_400Regular' }} className="text-[10px] uppercase tracking-[0.25em] text-runtable-faint">
+          TABLE FILL
+        </Text>
+        <Text style={{ fontFamily: 'IBMPlexMono_600SemiBold' }} className="text-[11px] text-runtable-text">
           {filled}/{capacity}
-          {dense ? ` · ${capacity} slots` : ''}
+          {dense ? ` · ${capacity} SLOTS` : ''}
         </Text>
       </View>
-      <View className="h-3 overflow-hidden rounded-full bg-white/5">
-        <View
-          className="h-full rounded-full bg-runtable-accent"
-          style={{ width: `${pct}%` }}
-        />
+        <View className="h-2 overflow-hidden border border-runtable-border bg-runtable-surface">
+        <View className="h-full" style={{ width: `${pct}%`, backgroundColor: RUNTABLE_COLORS.text }} />
       </View>
-    </GlassCard>
+    </ThermalCard>
   );
 }

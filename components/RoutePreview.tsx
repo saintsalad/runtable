@@ -31,8 +31,8 @@ export const RoutePreview = memo(function RoutePreview({
           rotateEnabled={false}>
           <MapPolyline
             coordinates={coords}
-            strokeColor={RUNTABLE_COLORS.accent}
-            strokeWidth={4}
+            strokeColor={RUNTABLE_COLORS.muted}
+            strokeWidth={3}
           />
         </MapView>
       </View>
@@ -48,15 +48,16 @@ export const RoutePreview = memo(function RoutePreview({
     .join(' ');
 
   return (
-    <View className="h-full w-full bg-black/40">
+    <View className="h-full w-full bg-runtable-bg">
       <Svg width="100%" height="100%" viewBox="0 0 100 100" preserveAspectRatio="none">
         <Polyline
           points={points}
           fill="none"
-          stroke={RUNTABLE_COLORS.accent}
-          strokeWidth={3}
-          strokeLinecap="round"
-          strokeLinejoin="round"
+          stroke={RUNTABLE_COLORS.muted}
+          strokeWidth={2}
+          strokeDasharray="4 4"
+          strokeLinecap="square"
+          strokeLinejoin="miter"
         />
       </Svg>
     </View>

@@ -1,4 +1,5 @@
 import type { PaceZone } from '@/types';
+
 import { PACE_ZONE_ORDER } from '@/constants/runtable';
 
 const FILIPINO_FIRST = [
@@ -17,11 +18,14 @@ const FILIPINO_FIRST = [
   'Miguel',
   'Nina',
   'Paolo',
-  'Rafael',
+  'Rico',
   'Sofia',
   'Tala',
   'Vince',
   'Ysabel',
+  'Ana',
+  'Mateo',
+  'Liza',
 ];
 
 const FILIPINO_LAST = [
@@ -39,16 +43,8 @@ const FILIPINO_LAST = [
   'Villanueva',
 ];
 
-export const AVATAR_SWATCH = [
-  '#7CFF6B',
-  '#38BDF8',
-  '#A78BFA',
-  '#F472B6',
-  '#FBBF24',
-  '#34D399',
-  '#FB923C',
-  '#2DD4BF',
-];
+/** Grayscale ink swatches — no chroma. */
+export const AVATAR_SWATCH = ['#454545', '#5C5C5C', '#3D3D3D', '#6E6E6E', '#2F2F2F', '#8B8B8B'] as const;
 
 function hashString(input: string): number {
   let h = 0;
@@ -68,21 +64,23 @@ export function mockFullName(seed: number): string {
 }
 
 export const ROUTE_NAMES = [
-  'BGC Loop Glow',
-  'Rizal Park Sunrise',
-  'Makati Grid Tempo',
-  'Marikina River East',
-  'UP Diliman Oval',
-  'Boni Sidewalk Sprint',
-  'Ayala Triangle Drift',
-  'Pasig Edge Run',
+  'QC NIGHT LOOP',
+  'BGC EAST STRIP',
+  'RIZAL SUNRISE SECTOR',
+  'MAKATI GRID SPLIT',
+  'MARIKINA RIVER EAST',
+  'UP DILIMAN OVAL',
+  'BONI SIDEWALK SECTOR',
+  'AYALA TRIANGLE DRIFT',
+  'PASIG EDGE RUN',
+  'ORTIGAS TERMINAL',
 ];
 
 export const WEATHER_CHIPS = [
-  'Humid · 29°C',
-  'Light breeze · 28°C',
-  'After-rain freshness · 27°C',
-  'Golden hour · 30°C',
+  'NIGHT · 27°C',
+  'HUMID · 29°C',
+  'DRY · 28°C',
+  'POST-RAIN · 26°C',
 ];
 
 export function randomPaceZone(seed: number): PaceZone {
@@ -92,15 +90,15 @@ export function randomPaceZone(seed: number): PaceZone {
 export function paceLabelFor(zone: PaceZone): string {
   switch (zone) {
     case 'easy':
-      return '6:30–7:30 /km';
+      return '6:30–7:30 /KM';
     case 'moderate':
-      return '5:45–6:15 /km';
+      return '5:45–6:15 /KM';
     case 'tempo':
-      return '5:00–5:30 /km';
+      return '5:00–5:30 /KM';
     case 'fast':
-      return '4:15–4:45 /km';
+      return '4:15–4:45 /KM';
     default:
-      return '5:30–6:00 /km';
+      return '5:30–6:00 /KM';
   }
 }
 

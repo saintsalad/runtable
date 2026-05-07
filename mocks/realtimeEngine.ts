@@ -70,6 +70,11 @@ export function startLiveSimulation(getStore: () => RunTableStore, targetDistanc
     if (store.paused) return;
     tick += 1;
     store.tickLiveRun({ tickIndex: tick, targetDistanceKm });
+    if (tick % 4 === 0 && Math.random() < 0.45) {
+      const cheers = ['◇', '◆', '▓', '▪', '¦', '¤'];
+      const g = cheers[tick % cheers.length] ?? '◇';
+      store.addCheer(g);
+    }
   }, 600);
 }
 

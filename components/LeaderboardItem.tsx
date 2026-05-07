@@ -27,13 +27,19 @@ export const LeaderboardItem = memo(function LeaderboardItem({ entry, prevRank }
   return (
     <Animated.View
       style={anim}
-      className="mb-3 flex-row items-center justify-between rounded-2xl border border-white/5 bg-white/5 px-3 py-2">
+      className="mb-3 flex-row items-center justify-between border border-runtable-border bg-runtable-card px-3 py-2">
       <View className="flex-row items-center gap-3">
-        <Text className="w-6 text-center text-sm font-bold text-runtable-muted">{entry.rank}</Text>
+        <Text style={{ fontFamily: 'IBMPlexMono_600SemiBold' }} className="w-8 text-[12px] text-runtable-muted">
+          {entry.rank.toString().padStart(2, '0')}
+        </Text>
         <ParticipantAvatar name={entry.name} color={entry.avatarColor} size="sm" />
-        <Text className="text-sm font-semibold text-white">{entry.name}</Text>
+        <Text style={{ fontFamily: 'IBMPlexMono_400Regular' }} className="text-[12px] uppercase tracking-wide text-runtable-muted">
+          {entry.name}
+        </Text>
       </View>
-      <Text className="text-sm font-semibold text-runtable-accent">{entry.distanceKm} km</Text>
+      <Text style={{ fontFamily: 'IBMPlexMono_400Regular' }} className="text-[12px] text-runtable-text">
+        {entry.distanceKm.toFixed(2)} KM
+      </Text>
     </Animated.View>
   );
 });

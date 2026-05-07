@@ -1,4 +1,3 @@
-import { BlurView } from 'expo-blur';
 import * as Haptics from 'expo-haptics';
 import { useEffect, useRef, useState } from 'react';
 import { Text, View } from 'react-native';
@@ -11,7 +10,10 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 
-const STEPS = ['3', '2', '1', 'GO'] as const;
+import { NoiseOverlay } from '@/components/ui/NoiseOverlay';
+import { ScanlineOverlay } from '@/components/ui/ScanlineOverlay';
+
+const STEPS = ['3', '2', '1', 'RUN'] as const;
 
 type AnimatedCountdownProps = {
   onComplete: () => void;
@@ -19,13 +21,22 @@ type AnimatedCountdownProps = {
 
 export function AnimatedCountdown({ onComplete }: AnimatedCountdownProps) {
   const [index, setIndex] = useState(0);
-  const glow = useSharedValue(0);
+  const flash = useSharedValue(0);
+  const shakeX = useSharedValue(0);
   const finished = useRef(false);
 
-  const glowStyle = useAnimatedStyle(() => ({
-    shadowOpacity: 0.25 + glow.value * 0.7,
-    shadowRadius: 10 + glow.value * 32,
+  const flareStyle = useAnimatedStyle(() => ({
+    opacity: 0.5 + flash.value * 0.45,
   }));
+
+  const labelStyle = useAnimatedStyle(() => ({
+    transform: [{ translateX: shakeX.value }],
+  }));
+
+  useEffect(() => {
+    flash.value = withSequence(withTiming(1, { duration: 60 }), withTiming(0.2, { duration: 240 }));
+    return undefined;
+  }, [flash, index]);
 
   useEffect(() => {
     if (index >= STEPS.length) {
@@ -33,43 +44,59 @@ export function AnimatedCountdown({ onComplete }: AnimatedCountdownProps) {
         finished.current = true;
         onComplete();
       }
-      return;
+      return undefined;
     }
-    const delay = index === 0 ? 420 : 720;
+    const delay = index === STEPS.length - 1 ? 780 : index === 0 ? 560 : 700;
     const id = setTimeout(() => {
       void Haptics.impactAsync(
-        index === STEPS.length - 1
+        index >= STEPS.length - 2
           ? Haptics.ImpactFeedbackStyle.Heavy
           : Haptics.ImpactFeedbackStyle.Medium
       );
-      glow.value = withSequence(withTiming(1, { duration: 200 }), withTiming(0, { duration: 380 }));
+      shakeX.value = withSequence(
+        withTiming(12, { duration: 42 }),
+        withTiming(-10, { duration: 48 }),
+        withTiming(5, { duration: 36 }),
+        withTiming(0, { duration: 42 })
+      );
       setIndex((i) => i + 1);
     }, delay);
     return () => clearTimeout(id);
-  }, [glow, index, onComplete]);
+  }, [index, onComplete, shakeX]);
 
-  if (index >= STEPS.length) {
-    return null;
-  }
+  if (index >= STEPS.length) return null;
 
   const label = STEPS[index];
+  const mega = label === 'RUN';
 
   return (
-    <View className="absolute inset-0 items-center justify-center">
-      <BlurView intensity={55} tint="dark" style={{ position: 'absolute', inset: 0 }} />
+    <View className="flex-1 bg-black">
+      <NoiseOverlay opacity={0.07} />
+      <ScanlineOverlay step={4} />
+
       <Animated.View
         key={label}
-        entering={FadeIn.duration(240)}
-        exiting={FadeOut.duration(160)}
-        style={glowStyle}
-        className="items-center rounded-[40px] px-10 py-8 shadow-2xl shadow-runtable-accent">
-        <Text
-          className={`text-center font-black text-runtable-accent ${
-            label === 'GO' ? 'text-7xl' : 'text-8xl'
-          }`}>
-          {label}
-        </Text>
-        <Text className="mt-4 text-sm font-medium text-runtable-muted">Brace the pack energy</Text>
+        entering={FadeIn.duration(200)}
+        exiting={FadeOut.duration(140)}
+        className="flex-1 items-center justify-center px-4">
+        <Animated.View style={labelStyle} className="items-center">
+          <Animated.View style={flareStyle} className="items-center">
+            <Text
+              style={{
+                fontFamily: 'PressStart2P_400Regular',
+                lineHeight: mega ? 78 : 96,
+                letterSpacing: 2,
+              }}
+              className={`text-white ${mega ? 'text-[64px]' : 'text-[76px]'}`}>
+              {label}
+            </Text>
+            <Text
+              style={{ fontFamily: 'IBMPlexMono_400Regular' }}
+              className="mt-10 text-[10px] uppercase tracking-[0.45em] text-runtable-faint">
+              SEQUENCE ARMED
+            </Text>
+          </Animated.View>
+        </Animated.View>
       </Animated.View>
     </View>
   );

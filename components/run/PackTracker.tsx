@@ -9,21 +9,22 @@ import Animated, {
 } from 'react-native-reanimated';
 
 import { ParticipantAvatar } from '@/components/ParticipantAvatar';
+import { RUNTABLE_COLORS } from '@/constants/runtable';
 import type { Participant } from '@/types';
 
-type PackTrackProps = {
+export type PackTrackerProps = {
   participants: Participant[];
   positions: Record<string, number>;
   height?: number;
   onTrackWidth?: (w: number) => void;
 };
 
-export const PackTrack = memo(function PackTrack({
+export const PackTracker = memo(function PackTracker({
   participants,
   positions,
   height = 112,
   onTrackWidth,
-}: PackTrackProps) {
+}: PackTrackerProps) {
   const trackWidth = useSharedValue(0);
 
   const onLayout = (e: LayoutChangeEvent) => {
@@ -35,14 +36,50 @@ export const PackTrack = memo(function PackTrack({
   return (
     <View className="w-full" style={{ height }} onLayout={onLayout}>
       <View className="flex-1 justify-center px-4">
-        <View className="h-3 overflow-hidden rounded-full bg-white/10">
-          <View className="absolute inset-y-0 left-0 w-[18%] rounded-full bg-runtable-accent/35" />
-          <View className="absolute inset-y-0 left-[33%] w-[10%] rounded-full bg-white/10" />
-          <View className="absolute inset-y-0 right-[22%] w-[12%] rounded-full bg-white/10" />
+        <View
+          className="relative h-[10px] overflow-hidden rounded-none border border-runtable-border"
+          style={{ backgroundColor: RUNTABLE_COLORS.surface }}>
+          <View
+            pointerEvents="none"
+            style={{
+              position: 'absolute',
+              left: '18%',
+              top: 2,
+              bottom: 2,
+              width: 2,
+              backgroundColor: RUNTABLE_COLORS.faint,
+              opacity: 0.65,
+            }}
+          />
+          <View
+            pointerEvents="none"
+            style={{
+              position: 'absolute',
+              left: '46%',
+              top: 2,
+              bottom: 2,
+              width: 2,
+              backgroundColor: RUNTABLE_COLORS.faint,
+              opacity: 0.45,
+            }}
+          />
+          <View
+            pointerEvents="none"
+            style={{
+              position: 'absolute',
+              right: '26%',
+              top: 2,
+              bottom: 2,
+              width: 2,
+              backgroundColor: RUNTABLE_COLORS.faint,
+              opacity: 0.45,
+            }}
+          />
         </View>
+
         <View className="absolute inset-x-0" style={{ height }}>
           {participants.map((p) => (
-            <RunnerDot
+            <PackRunnerDot
               key={p.id}
               participant={p}
               progress={positions[p.id] ?? 0}
@@ -63,16 +100,21 @@ type RunnerDotProps = {
   height: number;
 };
 
-const RunnerDot = memo(function RunnerDot({ participant, progress, trackWidth, height }: RunnerDotProps) {
+const PackRunnerDot = memo(function PackRunnerDot({
+  participant,
+  progress,
+  trackWidth,
+  height,
+}: RunnerDotProps) {
   const progressSv = useSharedValue(progress);
 
   useEffect(() => {
-    progressSv.value = withSpring(progress, { damping: 18, stiffness: 120 });
+    progressSv.value = withSpring(progress, { damping: 22, stiffness: 140 });
   }, [progress, progressSv]);
 
   const style = useAnimatedStyle(() => {
     const w = Math.max(trackWidth.value, 1);
-    const x = interpolate(progressSv.value, [0, 1], [12, w - 12]);
+    const x = interpolate(progressSv.value, [0, 1], [10, w - 10]);
     return {
       transform: [{ translateX: x }, { translateY: height / 2 - 28 }],
     };
@@ -80,7 +122,12 @@ const RunnerDot = memo(function RunnerDot({ participant, progress, trackWidth, h
 
   return (
     <Animated.View style={[style, { position: 'absolute', left: 0 }]} className="items-center">
-      <ParticipantAvatar name={participant.name} color={participant.avatarColor} size="sm" isHost={participant.isHost} />
+      <ParticipantAvatar
+        name={participant.name}
+        color={participant.avatarColor}
+        size="sm"
+        isHost={participant.isHost}
+      />
     </Animated.View>
   );
 });

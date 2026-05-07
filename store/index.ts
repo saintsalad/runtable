@@ -56,7 +56,7 @@ export interface RunTableState {
   cheerEvents: CheerEvent[];
   startActiveRun: (args: { paceLabel: string; participants: Participant[]; distanceKm: number }) => void;
   tickLiveRun: (args: { tickIndex: number; targetDistanceKm: number }) => void;
-  addCheer: (emoji: string) => void;
+  addCheer: (glyph: string) => void;
   togglePause: () => void;
   resetActiveRun: () => void;
 
@@ -69,11 +69,11 @@ export interface RunTableState {
 
 const initialUser: MockUser = {
   id: 'u-you',
-  displayName: 'You',
+  displayName: 'Miguel Reyes',
   level: 12,
   totalRuns: 48,
   streak: 6,
-  paceProfile: 'Moderate · 5:50 /km',
+  paceProfile: "PACE ID · MODERATE 05'50\"",
 };
 
 function initialParticipants(): Participant[] {
@@ -172,10 +172,10 @@ export const useRunTableStore = create<RunTableState>()(
           elapsedMs: s.elapsedMs + 600,
         }));
       },
-      addCheer: (emoji) => {
+      addCheer: (glyph) => {
         const id = `cheer-${Date.now()}`;
         set((s) => ({
-          cheerEvents: [...s.cheerEvents.slice(-12), { id, emoji, createdAt: Date.now() }],
+          cheerEvents: [...s.cheerEvents.slice(-12), { id, glyph, createdAt: Date.now() }],
         }));
       },
       togglePause: () => set((s) => ({ paused: !s.paused })),
