@@ -1,13 +1,14 @@
 import { Stack } from 'expo-router';
 
-import { RUNTABLE_COLORS } from '@/constants/runtable';
+import { useThemeTokens } from '@/components/theme/ThemeTokensProvider';
 
 export default function RunStackLayout() {
+  const t = useThemeTokens();
   return (
     <Stack
       screenOptions={{
         headerShown: false,
-        contentStyle: { backgroundColor: RUNTABLE_COLORS.bg },
+        contentStyle: { backgroundColor: t.background },
         animation: 'slide_from_right',
       }}>
       <Stack.Screen

@@ -1,10 +1,11 @@
 import { memo } from 'react';
 import { StyleSheet, View } from 'react-native';
 
-import { RUNTABLE_COLORS } from '@/constants/runtable';
+import { useRuntableLegacyColors } from '@/hooks/useRuntableLegacyColors';
 
 /** CRT-style horizontal rulings — static, very low opacity. */
 export const ScanlineOverlay = memo(function ScanlineOverlay({ step = 3 }: { step?: number }) {
+  const colors = useRuntableLegacyColors();
   const lines = Array.from({ length: Math.ceil(900 / step) }, (_, i) => i * step);
 
   return (
@@ -18,7 +19,7 @@ export const ScanlineOverlay = memo(function ScanlineOverlay({ step = 3 }: { ste
             right: 0,
             top,
             height: 1,
-            backgroundColor: RUNTABLE_COLORS.text,
+            backgroundColor: colors.text,
             opacity: 0.018,
           }}
         />

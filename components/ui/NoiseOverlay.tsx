@@ -1,10 +1,11 @@
 import { memo, useMemo } from 'react';
 import { StyleSheet, View, type DimensionValue, type ViewStyle } from 'react-native';
 
-import { RUNTABLE_COLORS } from '@/constants/runtable';
+import { useRuntableLegacyColors } from '@/hooks/useRuntableLegacyColors';
 
 /** Lightweight grain: deterministic micro-dots, no animated loops. */
 export const NoiseOverlay = memo(function NoiseOverlay({ opacity = 0.035 }: { opacity?: number }) {
+  const colors = useRuntableLegacyColors();
   const dots = useMemo(() => {
     type Dot = { lx: string; ly: string; w: number; h: number };
     const out: Dot[] = [];
@@ -27,7 +28,7 @@ export const NoiseOverlay = memo(function NoiseOverlay({ opacity = 0.035 }: { op
           top: d.ly as DimensionValue,
           width: d.w,
           height: d.h,
-          backgroundColor: RUNTABLE_COLORS.text,
+          backgroundColor: colors.text,
           opacity,
           borderRadius: 1,
         };

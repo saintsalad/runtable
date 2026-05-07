@@ -33,6 +33,14 @@
     "plugins": [
       "expo-router",
       [
+        "expo-image-picker",
+        {
+          "photosPermission": "RunTable needs photo access to create your thermal portrait avatar for receipts.",
+          "cameraPermission": "RunTable can use the camera to capture a portrait for your thermal avatar.",
+          "microphonePermission": false
+        }
+      ],
+      [
         "expo-location",
         {
           "locationWhenInUsePermission": "RunTable uses your location to show nearby group runs (preview only in this MVP)."

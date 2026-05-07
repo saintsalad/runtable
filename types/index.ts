@@ -1,4 +1,22 @@
+import type {
+  DevMockRole,
+  ParticipantRunSlice,
+  ParticipantRunStatus,
+  RunMood,
+  SessionPhase,
+  WeatherAtmosphere,
+} from '@/types/session';
+
 export type PaceZone = 'easy' | 'moderate' | 'tempo' | 'fast';
+
+export type {
+  DevMockRole,
+  ParticipantRunSlice,
+  ParticipantRunStatus,
+  RunMood,
+  SessionPhase,
+  WeatherAtmosphere,
+} from '@/types/session';
 
 export interface Friend {
   id: string;
@@ -34,6 +52,8 @@ export interface Participant {
   paceZone: PaceZone;
   isHost: boolean;
   isReady: boolean;
+  bitmapAvatarUri?: string | null;
+  runMood?: RunMood | null;
 }
 
 export interface LeaderboardEntry {
@@ -56,10 +76,23 @@ export interface RouteMeta {
   distanceKm: number;
 }
 
+export interface MockUser {
+  id: string;
+  displayName: string;
+  level: number;
+  totalRuns: number;
+  streak: number;
+  paceProfile: string;
+  thermalAvatarUri?: string | null;
+  /** Processed bitmap / thermal portrait (file URI). */
+  bitmapAvatarUri?: string | null;
+}
+
 export interface ReceiptParticipantLine {
   rank: number;
   displayName: string;
   paceQuote: string;
+  portraitUri?: string | null;
 }
 
 export interface ReceiptBadge {
@@ -81,13 +114,11 @@ export interface Receipt {
   polylineId: string;
   weatherLabel?: string;
   badges: ReceiptBadge[];
-}
-
-export interface MockUser {
-  id: string;
-  displayName: string;
-  level: number;
-  totalRuns: number;
-  streak: number;
-  paceProfile: string;
+  footerQuote?: string;
+  stampLabels?: string[];
+  runMoodLabel?: string;
+  participantPortraitUris?: Record<string, string>;
+  isPersonalRunReceipt?: boolean;
+  groupCollectiveLine?: string;
+  sessionSnapshot?: SessionPhase;
 }

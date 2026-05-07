@@ -1,3 +1,4 @@
+import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 import {
   IBMPlexMono_400Regular,
   IBMPlexMono_600SemiBold,
@@ -12,12 +13,14 @@ import { useEffect, useMemo } from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import 'react-native-reanimated';
 
-import { RUNTABLE_COLORS } from '@/constants/runtable';
+import { ThemeTokensProvider } from '@/components/theme/ThemeTokensProvider';
+import { useSemanticTheme } from '@/hooks/useSemanticTheme';
 
 void SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
   const queryClient = useMemo(() => new QueryClient(), []);
+  const theme = useSemanticTheme();
 
   const [fontsLoaded] = useFonts({
     PressStart2P_400Regular,
@@ -36,22 +39,26 @@ export default function RootLayout() {
   }
 
   return (
-    <GestureHandlerRootView style={{ flex: 1, backgroundColor: RUNTABLE_COLORS.bg }}>
-      <QueryClientProvider client={queryClient}>
-        <Stack
-          screenOptions={{
-            headerShown: false,
-            contentStyle: { backgroundColor: RUNTABLE_COLORS.bg },
-            animation: 'slide_from_right',
-            gestureEnabled: true,
-            animationDuration: 280,
-          }}>
-          <Stack.Screen name="index" options={{ animation: 'fade', animationDuration: 220 }} />
-          <Stack.Screen name="profile" options={{ animation: 'fade', animationDuration: 240 }} />
-          <Stack.Screen name="run" options={{ animation: 'slide_from_right', animationDuration: 300 }} />
-        </Stack>
-        <StatusBar style="light" />
-      </QueryClientProvider>
+    <GestureHandlerRootView style={{ flex: 1, backgroundColor: theme.background }}>
+      <ThemeTokensProvider>
+        <BottomSheetModalProvider>
+          <QueryClientProvider client={queryClient}>
+            <Stack
+            screenOptions={{
+              headerShown: false,
+              contentStyle: { backgroundColor: theme.background },
+              animation: 'slide_from_right',
+              gestureEnabled: true,
+              animationDuration: 280,
+            }}>
+            <Stack.Screen name="index" options={{ animation: 'fade', animationDuration: 220 }} />
+            <Stack.Screen name="profile" options={{ animation: 'fade', animationDuration: 240 }} />
+            <Stack.Screen name="run" options={{ animation: 'slide_from_right', animationDuration: 300 }} />
+          </Stack>
+            <StatusBar style={theme.mode === 'dark' ? 'light' : 'dark'} />
+          </QueryClientProvider>
+        </BottomSheetModalProvider>
+      </ThemeTokensProvider>
     </GestureHandlerRootView>
   );
 }

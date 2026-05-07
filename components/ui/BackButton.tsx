@@ -4,6 +4,8 @@ import { memo, useCallback } from 'react';
 import { Pressable, Text } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 
+import { useThemedTw } from '@/hooks/useThemedTw';
+
 const SPRING = { damping: 20, stiffness: 320 } as const;
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
@@ -15,6 +17,7 @@ type BackButtonProps = {
 export const BackButton = memo(function BackButton({ onPress }: BackButtonProps) {
   const router = useRouter();
   const scale = useSharedValue(1);
+  const tw = useThemedTw();
 
   const style = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],
@@ -49,8 +52,8 @@ export const BackButton = memo(function BackButton({ onPress }: BackButtonProps)
       hitSlop={12}
       style={style}
       className="flex-row items-center">
-      <Text className="font-mono text-[12px] uppercase tracking-[0.2em] text-runtable-muted">{`<`}</Text>
-      <Text className="ml-1 font-mono text-[11px] uppercase tracking-[0.28em] text-runtable-muted">
+      <Text className={`font-mono text-[12px] uppercase tracking-[0.2em] ${tw.muted}`}>{`<`}</Text>
+      <Text className={`ml-1 font-mono text-[11px] uppercase tracking-[0.28em] ${tw.muted}`}>
         BACK
       </Text>
     </AnimatedPressable>

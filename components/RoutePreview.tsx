@@ -3,7 +3,8 @@ import { View } from 'react-native';
 import Svg, { Polyline } from 'react-native-svg';
 import MapView, { Polyline as MapPolyline, PROVIDER_DEFAULT } from 'react-native-maps';
 
-import { RUNTABLE_COLORS } from '@/constants/runtable';
+import { useRuntableLegacyColors } from '@/hooks/useRuntableLegacyColors';
+import { useThemedTw } from '@/hooks/useThemedTw';
 import { polylineById, regionForPolyline } from '@/mocks/routes';
 
 type RoutePreviewProps = {
@@ -15,6 +16,8 @@ export const RoutePreview = memo(function RoutePreview({
   polylineId,
   variant = 'thumb',
 }: RoutePreviewProps) {
+  const colors = useRuntableLegacyColors();
+  const tw = useThemedTw();
   const coords = useMemo(() => polylineById(polylineId), [polylineId]);
   const region = useMemo(() => regionForPolyline(coords), [coords]);
 
@@ -31,7 +34,7 @@ export const RoutePreview = memo(function RoutePreview({
           rotateEnabled={false}>
           <MapPolyline
             coordinates={coords}
-            strokeColor={RUNTABLE_COLORS.muted}
+            strokeColor={colors.muted}
             strokeWidth={3}
           />
         </MapView>
@@ -48,12 +51,12 @@ export const RoutePreview = memo(function RoutePreview({
     .join(' ');
 
   return (
-    <View className="h-full w-full bg-runtable-bg">
+    <View className={`h-full w-full ${tw.bg}`}>
       <Svg width="100%" height="100%" viewBox="0 0 100 100" preserveAspectRatio="none">
         <Polyline
           points={points}
           fill="none"
-          stroke={RUNTABLE_COLORS.muted}
+          stroke={colors.muted}
           strokeWidth={2}
           strokeDasharray="4 4"
           strokeLinecap="square"

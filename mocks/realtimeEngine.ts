@@ -45,7 +45,14 @@ export function startLobbySimulation(getStore: () => RunTableStore, hostId: stri
 
   lobbyInterval = setInterval(() => {
     const store = getStore();
-    const { participants, maxParticipants } = store;
+    const { participants, maxParticipants, sessionPhase, roomAcceptingJoins } = store;
+    if (
+      sessionPhase === 'CLOSED' ||
+      !roomAcceptingJoins ||
+      (sessionPhase !== 'WAITING' && sessionPhase !== 'COUNTDOWN')
+    ) {
+      return;
+    }
     if (participants.length >= Math.min(maxParticipants, FREE_TIER_MAX_PARTICIPANTS)) return;
     seed += 1;
     const name = mockFullName(seed);
@@ -67,7 +74,7 @@ export function startLiveSimulation(getStore: () => RunTableStore, targetDistanc
 
   liveInterval = setInterval(() => {
     const store = getStore();
-    if (store.paused) return;
+    if (store.sessionPhase !== 'LIVE' || store.paused) return;
     tick += 1;
     store.tickLiveRun({ tickIndex: tick, targetDistanceKm });
     if (tick % 4 === 0 && Math.random() < 0.45) {

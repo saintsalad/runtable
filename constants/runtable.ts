@@ -1,16 +1,39 @@
-export const RUNTABLE_COLORS = {
-  bg: '#000000',
-  card: '#0F0F0F',
-  surface: '#161616',
-  text: '#FFFFFF',
-  muted: '#CFCFCF',
-  faint: '#8B8B8B',
-  border: '#2A2A2A',
-  paper: '#ECEAE4',
-  ink: '#0A0A0A',
-  /** Highlights use white / gray only (no chroma accents). */
-  focus: '#FFFFFF',
-} as const;
+import { darkPalette, lightPalette } from '@/constants/palettes';
+
+export type RuntableColorScheme = 'light' | 'dark';
+
+/** Legacy flat shape for stroke/fill migration — derived from semantic palettes. */
+export type RuntableLegacyColors = {
+  bg: string;
+  card: string;
+  surface: string;
+  text: string;
+  muted: string;
+  faint: string;
+  border: string;
+  paper: string;
+  ink: string;
+  focus: string;
+};
+
+export function runtableColorsForMode(mode: RuntableColorScheme): RuntableLegacyColors {
+  const p = mode === 'dark' ? darkPalette : lightPalette;
+  return {
+    bg: p.background,
+    card: p.card,
+    surface: p.surface,
+    text: p.text,
+    muted: p.muted,
+    faint: p.faint,
+    border: p.border,
+    paper: p.receiptPaper,
+    ink: p.thermalInk,
+    focus: p.text,
+  };
+}
+
+/** Default export for static imports; prefer `useRuntableLegacyColors()` in components. */
+export const RUNTABLE_COLORS = runtableColorsForMode('dark');
 
 export const FREE_TIER_MAX_PARTICIPANTS = 5;
 

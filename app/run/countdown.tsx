@@ -1,14 +1,22 @@
-import { useRouter } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback } from 'react';
 import { View } from 'react-native';
 
 import { AnimatedCountdown } from '@/components/AnimatedCountdown';
+import { useThemeTokens } from '@/components/theme/ThemeTokensProvider';
 import { NoiseOverlay } from '@/components/ui/NoiseOverlay';
 import { colorForName } from '@/mocks/fixtures';
 import { useRunTableStore } from '@/store';
 
 export default function CountdownScreen() {
   const router = useRouter();
+  const t = useThemeTokens();
+
+  useFocusEffect(
+    useCallback(() => {
+      useRunTableStore.getState().setSessionPhase('COUNTDOWN');
+    }, [])
+  );
 
   const onComplete = useCallback(() => {
     const { participants, currentDistanceKm, draftRun, authUser } = useRunTableStore.getState();
@@ -42,7 +50,7 @@ export default function CountdownScreen() {
   }, [router]);
 
   return (
-    <View className="flex-1 bg-black">
+    <View style={{ flex: 1, backgroundColor: t.background }}>
       <NoiseOverlay opacity={0.08} />
       <AnimatedCountdown onComplete={onComplete} />
     </View>

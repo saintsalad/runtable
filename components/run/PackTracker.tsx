@@ -9,12 +9,14 @@ import Animated, {
 } from 'react-native-reanimated';
 
 import { ParticipantAvatar } from '@/components/ParticipantAvatar';
-import { RUNTABLE_COLORS } from '@/constants/runtable';
-import type { Participant } from '@/types';
+import { RunStatusChip, runStatusLabel } from '@/components/run/RunStatusChip';
+import { useRuntableLegacyColors } from '@/hooks/useRuntableLegacyColors';
+import type { Participant, ParticipantRunSlice, ParticipantRunStatus } from '@/types';
 
 export type PackTrackerProps = {
   participants: Participant[];
   positions: Record<string, number>;
+  participantRuns?: Record<string, ParticipantRunSlice | undefined>;
   height?: number;
   onTrackWidth?: (w: number) => void;
 };
@@ -22,9 +24,11 @@ export type PackTrackerProps = {
 export const PackTracker = memo(function PackTracker({
   participants,
   positions,
+  participantRuns,
   height = 112,
   onTrackWidth,
 }: PackTrackerProps) {
+  const colors = useRuntableLegacyColors();
   const trackWidth = useSharedValue(0);
 
   const onLayout = (e: LayoutChangeEvent) => {
@@ -38,7 +42,7 @@ export const PackTracker = memo(function PackTracker({
       <View className="flex-1 justify-center px-4">
         <View
           className="relative h-[10px] overflow-hidden rounded-none border border-runtable-border"
-          style={{ backgroundColor: RUNTABLE_COLORS.surface }}>
+          style={{ backgroundColor: colors.surface }}>
           <View
             pointerEvents="none"
             style={{
@@ -47,7 +51,7 @@ export const PackTracker = memo(function PackTracker({
               top: 2,
               bottom: 2,
               width: 2,
-              backgroundColor: RUNTABLE_COLORS.faint,
+              backgroundColor: colors.faint,
               opacity: 0.65,
             }}
           />
@@ -59,7 +63,7 @@ export const PackTracker = memo(function PackTracker({
               top: 2,
               bottom: 2,
               width: 2,
-              backgroundColor: RUNTABLE_COLORS.faint,
+              backgroundColor: colors.faint,
               opacity: 0.45,
             }}
           />
@@ -71,7 +75,7 @@ export const PackTracker = memo(function PackTracker({
               top: 2,
               bottom: 2,
               width: 2,
-              backgroundColor: RUNTABLE_COLORS.faint,
+              backgroundColor: colors.faint,
               opacity: 0.45,
             }}
           />
@@ -85,6 +89,7 @@ export const PackTracker = memo(function PackTracker({
               progress={positions[p.id] ?? 0}
               trackWidth={trackWidth}
               height={height}
+              runStatus={participantRuns?.[p.id]?.status}
             />
           ))}
         </View>
@@ -98,6 +103,7 @@ type RunnerDotProps = {
   progress: number;
   trackWidth: SharedValue<number>;
   height: number;
+  runStatus?: ParticipantRunStatus;
 };
 
 const PackRunnerDot = memo(function PackRunnerDot({
@@ -105,6 +111,7 @@ const PackRunnerDot = memo(function PackRunnerDot({
   progress,
   trackWidth,
   height,
+  runStatus,
 }: RunnerDotProps) {
   const progressSv = useSharedValue(progress);
 
@@ -122,12 +129,21 @@ const PackRunnerDot = memo(function PackRunnerDot({
 
   return (
     <Animated.View style={[style, { position: 'absolute', left: 0 }]} className="items-center">
-      <ParticipantAvatar
-        name={participant.name}
-        color={participant.avatarColor}
-        size="sm"
-        isHost={participant.isHost}
-      />
+      <View className="items-center">
+        <View className="relative">
+          <ParticipantAvatar
+            name={participant.name}
+            color={participant.avatarColor}
+            size="sm"
+            isHost={participant.isHost}
+          />
+          {runStatus ? (
+            <View className="absolute -right-3 top-0">
+              <RunStatusChip text={runStatusLabel(runStatus)} />
+            </View>
+          ) : null}
+        </View>
+      </View>
     </Animated.View>
   );
 });

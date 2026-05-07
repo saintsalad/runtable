@@ -8,12 +8,27 @@ import { NoiseOverlay } from '@/components/ui/NoiseOverlay';
 import { ThermalCard } from '@/components/ui/ThermalCard';
 import { Header } from '@/components/ui/Header';
 import { DottedDivider } from '@/components/ui/DottedDivider';
+import { PixelButton } from '@/components/ui/PixelButton';
+import type { ThemePreference } from '@/constants/palettes';
+import { useDevSessionStore } from '@/store/devSessionStore';
+import { useThemeStore } from '@/store/themeStore';
 import { useRunTableStore } from '@/store';
+import type { DevMockRole, WeatherAtmosphere } from '@/types';
+
+const MOCK_WEATHER: WeatherAtmosphere[] = ['DRIZZLE', 'HUMID', 'CLEAR NIGHT', 'WINDY'];
 
 export default function ProfileScreen() {
   const router = useRouter();
   const authUser = useRunTableStore((s) => s.authUser);
   const receipts = useRunTableStore((s) => s.receipts);
+  const devMockRole = useDevSessionStore((s) => s.devMockRole);
+  const setDevMockRole = useDevSessionStore((s) => s.setDevMockRole);
+  const mapDayPhase = useDevSessionStore((s) => s.mapDayPhase);
+  const setMapDayPhase = useDevSessionStore((s) => s.setMapDayPhase);
+  const themePreference = useThemeStore((s) => s.preference);
+  const setThemePreference = useThemeStore((s) => s.setPreference);
+  const ambientWeather = useRunTableStore((s) => s.ambientWeather);
+  const setAmbientWeather = useRunTableStore((s) => s.setAmbientWeather);
 
   const heights = useMemo(() => [200, 230, 210, 250], []);
 
@@ -84,6 +99,86 @@ export default function ProfileScreen() {
           <Text style={{ fontFamily: 'IBMPlexMono_600SemiBold' }} className="mt-3 text-[12px] uppercase tracking-widest text-runtable-muted">
             {authUser.paceProfile}
           </Text>
+        </ThermalCard>
+
+        <ThermalCard className="mt-4 p-4">
+          <Text style={{ fontFamily: 'IBMPlexMono_400Regular' }} className="text-[9px] uppercase tracking-[0.3em] text-runtable-faint">
+            THERMAL PORTRAIT
+          </Text>
+          <Text style={{ fontFamily: 'IBMPlexMono_400Regular' }} className="mt-2 text-[10px] text-runtable-faint">
+            Bitmap / dither lab — receipts & roster stamps.
+          </Text>
+          <PixelButton
+            variant="outline"
+            className="mt-4"
+            label="OPEN BITMAP LAB"
+            onPress={() => router.push('/profile/bitmap-avatar')}
+          />
+        </ThermalCard>
+
+        <ThermalCard className="mt-4 p-4">
+          <Text style={{ fontFamily: 'IBMPlexMono_400Regular' }} className="mt-2 text-[10px] text-runtable-faint">
+            MOCK ROLE (HOST / JOINER / AUTO)
+          </Text>
+          <View className="mt-3 flex-row flex-wrap gap-2">
+            {(['auto', 'host', 'joiner'] as const satisfies readonly DevMockRole[]).map((r) => (
+              <PixelButton
+                key={r}
+                variant={devMockRole === r ? 'solid' : 'outline'}
+                label={r.toUpperCase()}
+                className="min-w-[28%] flex-1 px-1"
+                onPress={() => setDevMockRole(r)}
+              />
+            ))}
+          </View>
+          <Text style={{ fontFamily: 'IBMPlexMono_400Regular' }} className="mt-4 text-[10px] text-runtable-faint">
+            THEME PREFERENCE
+          </Text>
+          <View className="mt-3 flex-row flex-wrap gap-2">
+            {(['system', 'light', 'dark'] as const satisfies readonly ThemePreference[]).map((p) => (
+              <PixelButton
+                key={p}
+                variant={themePreference === p ? 'solid' : 'outline'}
+                label={p.toUpperCase()}
+                className="min-w-[28%] flex-1 px-1"
+                onPress={() => setThemePreference(p)}
+              />
+            ))}
+          </View>
+          <Text style={{ fontFamily: 'IBMPlexMono_400Regular' }} className="mt-4 text-[10px] text-runtable-faint">
+            MOCK WEATHER (LOBBY / RECEIPT)
+          </Text>
+          <Text style={{ fontFamily: 'IBMPlexMono_400Regular' }} className="mt-1 text-[9px] text-runtable-muted">
+            NOW · {ambientWeather}
+          </Text>
+          <View className="mt-3 flex-row flex-wrap gap-2">
+            {MOCK_WEATHER.map((w) => (
+              <PixelButton
+                key={w}
+                variant={ambientWeather === w ? 'solid' : 'outline'}
+                label={w.replace(' ', '\n')}
+                className="min-w-[45%] flex-1 px-1"
+                onPress={() => setAmbientWeather(w)}
+              />
+            ))}
+          </View>
+          <Text style={{ fontFamily: 'IBMPlexMono_400Regular' }} className="mt-4 text-[10px] text-runtable-faint">
+            MAP DAY PHASE (MOCK)
+          </Text>
+          <View className="mt-3 flex-row gap-2">
+            <PixelButton
+              variant={mapDayPhase === 'night' ? 'solid' : 'outline'}
+              label="NIGHT"
+              className="flex-1"
+              onPress={() => setMapDayPhase('night')}
+            />
+            <PixelButton
+              variant={mapDayPhase === 'morning' ? 'solid' : 'outline'}
+              label="MORNING"
+              className="flex-1"
+              onPress={() => setMapDayPhase('morning')}
+            />
+          </View>
         </ThermalCard>
       </View>
 

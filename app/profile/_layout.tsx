@@ -1,8 +1,9 @@
 import { Stack } from 'expo-router';
 
-import { RUNTABLE_COLORS } from '@/constants/runtable';
+import { useThemeTokens } from '@/components/theme/ThemeTokensProvider';
 
 export default function ProfileStackLayout() {
+  const t = useThemeTokens();
   return (
     <Stack
       screenOptions={{
@@ -10,7 +11,7 @@ export default function ProfileStackLayout() {
         animation: 'fade',
         gestureEnabled: true,
         animationDuration: 240,
-        contentStyle: { backgroundColor: RUNTABLE_COLORS.bg },
+        contentStyle: { backgroundColor: t.background },
       }}
     />
   );
