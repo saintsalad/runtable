@@ -1,0 +1,64 @@
+import { memo, useMemo } from 'react';
+import { View } from 'react-native';
+import Svg, { Polyline } from 'react-native-svg';
+import MapView, { Polyline as MapPolyline, PROVIDER_DEFAULT } from 'react-native-maps';
+
+import { RUNTABLE_COLORS } from '@/constants/runtable';
+import { polylineById, regionForPolyline } from '@/mocks/routes';
+
+type RoutePreviewProps = {
+  polylineId: string;
+  variant?: 'thumb' | 'map';
+};
+
+export const RoutePreview = memo(function RoutePreview({
+  polylineId,
+  variant = 'thumb',
+}: RoutePreviewProps) {
+  const coords = useMemo(() => polylineById(polylineId), [polylineId]);
+  const region = useMemo(() => regionForPolyline(coords), [coords]);
+
+  if (variant === 'map') {
+    return (
+      <View className="h-56 w-full overflow-hidden rounded-3xl">
+        <MapView
+          style={{ flex: 1 }}
+          provider={PROVIDER_DEFAULT}
+          region={region}
+          scrollEnabled={false}
+          zoomEnabled={false}
+          pitchEnabled={false}
+          rotateEnabled={false}>
+          <MapPolyline
+            coordinates={coords}
+            strokeColor={RUNTABLE_COLORS.accent}
+            strokeWidth={4}
+          />
+        </MapView>
+      </View>
+    );
+  }
+
+  const points = coords
+    .map((c) => {
+      const x = ((c.longitude - region.longitude) / region.longitudeDelta + 0.5) * 100;
+      const y = (0.5 - (c.latitude - region.latitude) / region.latitudeDelta) * 100;
+      return `${x},${y}`;
+    })
+    .join(' ');
+
+  return (
+    <View className="h-full w-full bg-black/40">
+      <Svg width="100%" height="100%" viewBox="0 0 100 100" preserveAspectRatio="none">
+        <Polyline
+          points={points}
+          fill="none"
+          stroke={RUNTABLE_COLORS.accent}
+          strokeWidth={3}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </Svg>
+    </View>
+  );
+});

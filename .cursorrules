@@ -1,0 +1,145 @@
+# RunTable — Cursor Rules
+# Social realtime coordination + memory-sharing (not a fitness analytics app).
+
+## Product & scope
+- RunTable is group runs by pace, realtime social engagement during runs, and post-run shareable receipts as the core differentiator.
+- Prioritize coordination, presence, and memorable artifacts over charts, biometrics, and training load.
+- Favor polish, shareability, and collectible-feeling receipt experiences over generic dashboards.
+
+## Tech stack (mandatory)
+- React Native with latest Expo SDK; prefer Expo-managed workflow and Expo APIs over unsupported native modules.
+- Expo Router for navigation; type route params and avoid untyped stringly navigation.
+- TypeScript strict mode everywhere; no `any`; no untyped JSON—validate at boundaries with Zod.
+- NativeWind for styling; Tailwind utility classes; avoid `StyleSheet.create` unless NativeWind cannot express it (rare edge cases).
+- Zustand for client/app state; TanStack Query (React Query) for server/async state—never duplicate the same concern in both.
+- React Hook Form + Zod for forms; schema-first validation and typed form values.
+- React Native Reanimated for animations; React Native Gesture Handler for gestures; no `Animated` API for non-trivial motion.
+- React Native Maps, Expo Location, Expo Haptics as the defaults for maps, location, and haptics.
+- MMKV for fast persistence (critical settings, tokens, small caches)—not as a dump for all server data.
+- `@shopify/flash-list` (FlashList) for long/virtualized lists; do not use `FlatList` for large or complex lists.
+- `socket.io-client` for realtime; lightweight payloads; room-scoped subscriptions.
+- `lucide-react-native` for icons; consistent stroke/size tokens.
+
+## Architecture
+- Feature-first structure: colocate UI, hooks, store slices, types, and utils per feature under `features/<feature>/`.
+- Each feature folder MUST include (create when needed): `components/`, `hooks/`, `store/`, `types/`, `utils/`.
+- App shell and routes live in `app/` (Expo Router); keep route files thin—compose from `features/` and `components/`.
+- Shared primitives: `components/` for reusable UI; `lib/` for pure helpers; `services/` for API/socket/fetch clients; `store/` for cross-cutting Zustand only when truly global.
+- Shared types in `types/`; API DTOs and mappers in `lib/` or `services/` with Zod schemas where data crosses the network.
+- `constants/` for tokens (spacing, motion, copy keys); `mocks/` for deterministic fixtures; keep mocks typed.
+- Separation of concerns: screens orchestrate; hooks encapsulate data and side effects; components render; services talk to the network.
+- Prevent monolithic screens and god components; split when a file exceeds ~250 lines OR mixes unrelated concerns.
+- Avoid prop drilling: use composition, context sparingly, Zustand selectors, or React Query in leaf hooks—pick the smallest tool.
+
+## Repository layout (enforce)
+```
+app/
+components/
+features/
+hooks/          # only for cross-feature hooks; prefer feature-local hooks
+lib/
+store/
+constants/
+types/
+mocks/
+services/
+```
+
+## React Native & Expo
+- Functional components and hooks only; no class components.
+- Prefer Expo Router layouts and grouped routes; use typed search params where applicable.
+- Use Expo-compatible modules first; document any deviation and provide a fallback for Expo Go if relevant.
+- Safe areas: `SafeAreaView` / `useSafeAreaInsets` from `react-native-safe-area-context` for sticky CTAs and headers.
+- Keyboard: `KeyboardAvoidingView` or dedicated form wrappers; do not obscure primary actions.
+- Permissions: request via Expo modules with clear UX copy; handle denial gracefully.
+- Linking and deep links: keep route paths consistent with Expo Router file names.
+
+## Styling (NativeWind)
+- Dark-mode first; tokens for background, surface, border, accent, success, danger, text primary/secondary.
+- Premium sports aesthetic: restrained glassmorphism (`GlassCard`-style patterns), generous spacing, strong hierarchy—avoid cluttered metric walls.
+- Oversized touch targets (min ~44pt); adequate hitSlop on small icons.
+- Avoid excessive gradients, heavy skeuomorphism, and stock “fitness dashboard” tropes.
+- Avoid Android-default-looking widgets; customize tabs, headers, and lists to match the product.
+- No deeply nested JSX: extract subcomponents; max ~3 levels of meaningful nesting before splitting.
+- Inline `style` props only for Reanimated animated styles or truly dynamic one-off values—not as a substitute for layout system.
+
+## UI / UX motion & haptics
+- Motion: smooth, physical, intentional—use Reanimated with sensible easing; prefer layout transitions and shared-element patterns where appropriate.
+- Avoid gratuitous animation; respect reduced-motion preferences when exposed by platform APIs.
+- Haptics: subtle on success, errors, and key confirmations (Expo Haptics); do not spam on every list scroll.
+
+## Performance
+- Lists: FlashList + `estimatedItemSize` (or documented equivalent), stable `keyExtractor`, memoized `renderItem`.
+- Never pass inline anonymous functions to list children if it causes child re-renders; use `useCallback` or extracted row component with memo.
+- Use `React.memo` on pure presentational components that receive stable props.
+- Use `useMemo`/`useCallback` when profiling or when dependency clarity prevents cascade renders—do not blanket-memo everything blindly.
+- Zustand: narrow selectors; avoid subscribing entire store in hot trees; split stores by feature when global slice grows.
+- React Query: stale times tuned to domain; structural sharing; prefer keyed queries; avoid refetch storms.
+- Lazy-load heavy screens and rare modals where Expo Router allows; defer non-critical subscriptions until screen focus.
+- Realtime: throttle/debounce high-frequency events (e.g. live positions, typing); batch UI updates; never push per-second GPS writes over the socket for social UX—sample sensibly.
+- Prevent oversized global state blobs; derive view models in selectors or hooks.
+- Images: sized sources; avoid layout thrash; prefer appropriate formats and caching.
+
+## State management
+- Zustand: UI session, realtime connection state, ephemeral run session, UI flags—keep slices focused.
+- React Query: runs, profiles, receipts, history—anything with cache invalidation and background refresh.
+- Persist only critical data via MMKV or Zustand persist middleware; gate migrations and version keys.
+- Do not mirror server entities in Zustand when React Query already owns them; derive or join in hooks.
+
+## TypeScript
+- Strict typing end-to-end; `interface` for object contracts (props, DTOs); `type` for unions, mapped types, and utilities.
+- Navigation: typed params for Expo Router; no `as any` on `router.push`.
+- Zustand stores: explicit state + actions types; infer where it improves DX without losing safety.
+- Hooks return narrow typed tuples/objects; avoid `unknown` leakage—narrow with Zod or type guards.
+- Component props: explicit types; extend native props only when forwarding; document non-obvious props inline briefly.
+
+## Forms
+- React Hook Form controllers for inputs; Zod resolver or manual schema parse on submit.
+- Reusable field components in `components/forms/` or `features/<feature>/components/forms/`.
+- Show field-level errors clearly; preserve values on soft errors; align with keyboard “next/done”.
+
+## Realtime (Socket.IO)
+- Room-based channels (run lobby, live run, user presence); unsubscribe on blur/unmount.
+- Optimistic UI for join/leave and non-destructive actions; roll back on explicit failure.
+- Payloads: minimal deltas; version or sequence if ordering matters; tolerate reordering in UI.
+- Offline: queued actions or read-only mode with clear messaging; reconnect with exponential backoff in service layer.
+- Prevent broadcast storms and giant JSON blobs; rate-limit client emissions.
+
+## Data & API
+- Typed contracts: Zod schemas for responses; parse at the edge in `services/`; map to domain types.
+- No raw `fetch().json()` without validation for external data.
+- Errors: discriminated unions or typed error classes; user-facing copy separate from developer logs.
+
+## Run Receipt feature
+- Receipts are a first-class product surface: hero layout, share-ready composition, and smooth reveal animations (Reanimated).
+- Build a reusable receipt system: card variants, branding tokens, export/share hooks—no one-off gigantic JSX.
+- Favor collectible, premium visuals over dense stats; restraint beats metric overload.
+
+## Mobile UX
+- Thumb-friendly zones for primary actions; sticky CTA bars where flows demand commitment.
+- Loading: skeletons or subtle placeholders—not spinners everywhere.
+- Transitions: prefer native-feeling stack/modal transitions from Expo Router; keep navigation predictable.
+- Empty and error states: on-brand, actionable, never silent failures.
+
+## Code quality & patterns
+- No class components; no legacy context for state that belongs in Zustand/React Query.
+- Avoid unnecessary `useEffect` for derived state—compute during render or in event handlers.
+- Avoid deeply nested ternaries; use early returns, small helpers, or maps.
+- No duplicated UI logic—extract hooks or small components.
+- File naming: `PascalCase` for components; `useThing.ts` for hooks; `kebab-case` for route files per Expo Router conventions; otherwise `camelCase` for utilities.
+- Imports: prefer absolute aliases if configured; group external, internal, relative.
+
+## Code generation (AI / Cursor)
+- Generate modular, production-shaped code: no placeholder `TODO` unless the user explicitly wants scaffolding.
+- No fake endpoints or imaginary npm packages; align with the stack above.
+- Prefer clarity over clever abstractions; avoid frameworks-within-frameworks.
+- When adding features, touch the minimal set of files; keep diffs reviewable.
+
+## Testing (encourage)
+- Test components in isolation with deterministic mocks from `mocks/`.
+- Prefer pure logic tests for utils and selectors; snapshot tests only for stable receipt layouts when valuable.
+
+## Anti-patterns (do not do)
+- Monolithic components; prop drilling; inline anonymous functions in hot list paths; untyped objects; deep JSX; global bag-of-state; websocket firehose; FlatList for heavy feeds; `Animated` for complex gestures; fitness-analytics-first UX.
+
+When tradeoffs arise: choose maintainability and readability over cleverness; choose user-perceived performance and stable architecture over short-term speed.

@@ -1,0 +1,10 @@
+{"sessionId":"06e921","timestamp":1778139895752,"hypothesisId":"H4","location":"app/_layout.tsx","message":"expo config experiments","data":{"experiments":{"typedRoutes":true,"reactCompiler":false},"reactCompiler":false,"appOwnership":null}}
+{"sessionId":"06e921","timestamp":1778139895757,"hypothesisId":"H1-H3","location":"app/_layout.tsx","message":"verifyInstallation passed","data":{"ok":true}}
+{"sessionId":"06e921","timestamp":1778139895858,"hypothesisId":"H8","location":"app/(tabs)/home.tsx","message":"style-only control (40x40)","data":{"width":40,"height":40},"runId":"post-fix-3"}
+{"sessionId":"06e921","timestamp":1778139895858,"hypothesisId":"H8","location":"app/(tabs)/home.tsx","message":"className w-10 h-10","data":{"width":35,"height":35},"runId":"post-fix-3"}
+{"sessionId":"06e921","timestamp":1778139895858,"hypothesisId":"H8","location":"app/(tabs)/home.tsx","message":"style-only control (40x40)","data":{"width":40,"height":40},"runId":"post-fix-3"}
+{"sessionId":"06e921","timestamp":1778139895858,"hypothesisId":"H8","location":"app/(tabs)/home.tsx","message":"className w-10 h-10","data":{"width":35,"height":35},"runId":"post-fix-3"}
+{"sessionId":"06e921","timestamp":1778139929025,"hypothesisId":"H8","location":"app/(tabs)/home.tsx","message":"style-only control (40x40)","data":{"width":40,"height":40},"runId":"post-fix-3"}
+{"sessionId":"06e921","timestamp":1778139929025,"hypothesisId":"H8","location":"app/(tabs)/home.tsx","message":"style-only control (40x40)","data":{"width":40,"height":40},"runId":"post-fix-3"}
+{"sessionId":"06e921","timestamp":1778139929025,"hypothesisId":"H8","location":"app/(tabs)/home.tsx","message":"className w-10 h-10","data":{"width":35,"height":35},"runId":"post-fix-3"}
+{"sessionId":"06e921","timestamp":1778139929025,"hypothesisId":"H8","location":"app/(tabs)/home.tsx","message":"className w-10 h-10","data":{"width":35,"height":35},"runId":"post-fix-3"}
