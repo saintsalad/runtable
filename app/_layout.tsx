@@ -52,6 +52,7 @@ export default function RootLayout() {
               animationDuration: 280,
             }}>
             <Stack.Screen name="index" options={{ animation: 'fade', animationDuration: 220 }} />
+            <Stack.Screen name="(tabs)" options={{ animation: 'fade', animationDuration: 220 }} />
             <Stack.Screen name="profile" options={{ animation: 'fade', animationDuration: 240 }} />
             <Stack.Screen name="run" options={{ animation: 'slide_from_right', animationDuration: 300 }} />
           </Stack>

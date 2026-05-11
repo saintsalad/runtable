@@ -43,6 +43,7 @@ export interface RunListing {
   distanceKm: number;
   startTimeLabel: string;
   polylineId: string;
+  coordinate: { latitude: number; longitude: number };
 }
 
 export interface Participant {

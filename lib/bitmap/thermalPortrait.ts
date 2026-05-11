@@ -1,30 +1,87 @@
+import { Buffer as BufferPolyfill } from 'buffer';
+if (typeof global.Buffer === 'undefined') {
+  (global as typeof globalThis & { Buffer: typeof BufferPolyfill }).Buffer = BufferPolyfill;
+}
+
 import * as jpeg from 'jpeg-js';
 import * as FileSystem from 'expo-file-system/legacy';
 import * as ImageManipulator from 'expo-image-manipulator';
 
+export type PixelShape = 'square' | 'circle-solid' | 'circle-outline';
+export type ColorMode = 'duotone' | 'tritone';
+
 export interface ThermalizeOptions {
-  /** Effective column/row block size for sampling (≈2–24). */
   pixelSize: number;
-  /** Luminosity curve around mid-gray (≈0.5–2). */
   contrast: number;
-  /** Floyd–Steinberg strength on downsampled grid (0 = threshold only). */
   intensity: number;
+  pixelShape?: PixelShape;
+  /** Foreground (dark) color [r,g,b]. */
+  fgColor?: [number, number, number];
+  /** Background (light) color [r,g,b]. */
+  bgColor?: [number, number, number];
+  /** Mid-tone color [r,g,b] — only used when colorMode is 'tritone'. */
+  midColor?: [number, number, number];
+  colorMode?: ColorMode;
 }
 
-/** RGBA thermal / bitmap — downsample, contrast, optional error diffusion on grid. */
+/** Returns true if pixel at (lx, ly) within a cell of size (cw, ch) is inside the pixel shape. */
+function inPixelShape(
+  lx: number,
+  ly: number,
+  cw: number,
+  ch: number,
+  shape: PixelShape,
+): boolean {
+  if (shape === 'square') return true;
+  // normalised distance from cell centre
+  const cx = (cw - 1) / 2;
+  const cy = (ch - 1) / 2;
+  const dx = (lx - cx) / (cx + 0.5);
+  const dy = (ly - cy) / (cy + 0.5);
+  const d2 = dx * dx + dy * dy;
+  if (shape === 'circle-solid') return d2 <= 1;
+  // circle-outline: ring between 60% and 100% of radius
+  return d2 <= 1 && d2 >= 0.36;
+}
+
+/** Map a 0-255 gray value to an RGB color based on color mode. */
+function grayToColor(
+  raw: number,
+  fg: [number, number, number],
+  bg: [number, number, number],
+  mid: [number, number, number] | undefined,
+  colorMode: ColorMode,
+): [number, number, number] {
+  if (colorMode === 'tritone' && mid) {
+    if (raw < 85) return fg;
+    if (raw < 170) return mid;
+    return bg;
+  }
+  // duotone — dithered grid is already 0 or 255
+  return raw <= 127 ? fg : bg;
+}
+
 export function thermalizeRgba(
   src: Uint8Array | Uint8ClampedArray,
   width: number,
   height: number,
-  opts: ThermalizeOptions
+  opts: ThermalizeOptions,
 ): Uint8Array {
   const { pixelSize, contrast, intensity } = opts;
+  const fg = opts.fgColor ?? [28, 28, 28];
+  const bg = opts.bgColor ?? [248, 248, 248];
+  const mid = opts.midColor;
+  const colorMode = opts.colorMode ?? 'duotone';
+  const pixelShape = opts.pixelShape ?? 'square';
+
   const data = src instanceof Uint8Array ? src : new Uint8Array(src);
   const out = new Uint8Array(width * height * 4);
+
   const bw = Math.max(2, Math.floor(width / Math.max(1, pixelSize)));
   const bh = Math.max(2, Math.floor(height / Math.max(1, pixelSize)));
   const grid = new Float32Array(bw * bh);
 
+  // downsample to grid
   for (let gy = 0; gy < bh; gy++) {
     for (let gx = 0; gx < bw; gx++) {
       const x0 = Math.floor((gx * width) / bw);
@@ -36,10 +93,7 @@ export function thermalizeRgba(
       for (let y = y0; y < y1; y++) {
         for (let x = x0; x < x1; x++) {
           const i = (y * width + x) * 4;
-          const r = data[i] ?? 0;
-          const g = data[i + 1] ?? 0;
-          const b = data[i + 2] ?? 0;
-          sum += 0.299 * r + 0.587 * g + 0.114 * b;
+          sum += 0.299 * (data[i] ?? 0) + 0.587 * (data[i + 1] ?? 0) + 0.114 * (data[i + 2] ?? 0);
           count++;
         }
       }
@@ -49,19 +103,46 @@ export function thermalizeRgba(
     }
   }
 
-  const dithered =
-    intensity > 0.04 ? floydSteinbergGrid(grid, bw, bh, intensity) : quantizeGrid(grid, bw, bh);
+  // for tritone skip binary dithering — keep continuous gray values
+  const processed =
+    colorMode === 'tritone'
+      ? grid
+      : intensity > 0.04
+      ? floydSteinbergGrid(grid, bw, bh, intensity)
+      : quantizeGrid(grid, bw, bh);
 
+  // paint back to full resolution with per-cell pixel shape mask
   for (let y = 0; y < height; y++) {
     for (let x = 0; x < width; x++) {
       const gx = Math.min(bw - 1, Math.floor((x / width) * bw));
       const gy = Math.min(bh - 1, Math.floor((y / height) * bh));
-      const raw = dithered[gy * bw + gx] ?? 0;
-      const v = raw > 127 ? 248 : 28;
+
+      // local position within the cell
+      const x0 = Math.floor((gx * width) / bw);
+      const x1 = Math.floor(((gx + 1) * width) / bw);
+      const y0 = Math.floor((gy * height) / bh);
+      const y1 = Math.floor(((gy + 1) * height) / bh);
+      const cw = Math.max(1, x1 - x0);
+      const ch = Math.max(1, y1 - y0);
+      const lx = x - x0;
+      const ly = y - y0;
+
+      const raw = processed[gy * bw + gx] ?? 0;
       const i = (y * width + x) * 4;
-      out[i] = v;
-      out[i + 1] = v;
-      out[i + 2] = v;
+
+      const inside = inPixelShape(lx, ly, cw, ch, pixelShape);
+
+      let color: [number, number, number];
+      if (inside) {
+        color = grayToColor(raw, fg, bg, mid, colorMode);
+      } else {
+        // outside pixel shape — use background color
+        color = bg;
+      }
+
+      out[i] = color[0];
+      out[i + 1] = color[1];
+      out[i + 2] = color[2];
       out[i + 3] = 255;
     }
   }
@@ -71,8 +152,7 @@ export function thermalizeRgba(
 function quantizeGrid(g: Float32Array, w: number, h: number): Float32Array {
   const o = new Float32Array(g.length);
   for (let i = 0; i < g.length; i++) {
-    const v = g[i] ?? 0;
-    o[i] = v >= 128 ? 255 : 0;
+    o[i] = (g[i] ?? 0) >= 128 ? 255 : 0;
   }
   return o;
 }
@@ -102,21 +182,16 @@ function uint8ToBase64(bytes: Uint8Array): string {
   let bin = '';
   const chunk = 0x8000;
   for (let i = 0; i < bytes.length; i += chunk) {
-    const sub = bytes.subarray(i, i + chunk);
-    bin += String.fromCharCode.apply(null, sub as unknown as number[]);
+    bin += String.fromCharCode.apply(null, bytes.subarray(i, i + chunk) as unknown as number[]);
   }
   return btoa(bin);
 }
 
 function encodeBytesFromJpegEncode(result: unknown): Uint8Array {
   if (result instanceof Uint8Array) return result;
-  if (
-    result &&
-    typeof result === 'object' &&
-    'data' in result &&
-    (result as { data: unknown }).data instanceof Uint8Array
-  ) {
-    return (result as { data: Uint8Array }).data;
+  if (result && typeof result === 'object' && 'data' in result) {
+    const d = (result as { data: unknown }).data;
+    if (d instanceof Uint8Array) return d;
   }
   const buf = result as { buffer?: ArrayBuffer; byteOffset?: number; byteLength?: number };
   if (buf?.buffer && typeof buf.byteLength === 'number') {
@@ -126,14 +201,11 @@ function encodeBytesFromJpegEncode(result: unknown): Uint8Array {
 }
 
 export async function processThermalImage(sourceUri: string, opts: ThermalizeOptions): Promise<string> {
-  const resizeW = Math.max(
-    64,
-    Math.min(480, Math.round(360 / Math.max(1, opts.pixelSize / 4)))
-  );
+  const resizeW = Math.max(64, Math.min(480, Math.round(360 / Math.max(1, opts.pixelSize / 4))));
   const result = await ImageManipulator.manipulateAsync(
     sourceUri,
     [{ resize: { width: resizeW } }],
-    { compress: 0.88, format: ImageManipulator.SaveFormat.JPEG, base64: true }
+    { compress: 0.88, format: ImageManipulator.SaveFormat.JPEG, base64: true },
   );
   if (!result.base64) throw new Error('Image manipulator did not return base64');
 
@@ -152,11 +224,7 @@ export async function processThermalImage(sourceUri: string, opts: ThermalizeOpt
 
   const dir = FileSystem.cacheDirectory;
   if (!dir) throw new Error('No cache directory');
-  const filename = `thermal-${Date.now()}.jpg`;
-  const outPath = `${dir}${filename}`;
-  const b64 = uint8ToBase64(encBytes);
-  await FileSystem.writeAsStringAsync(outPath, b64, {
-    encoding: 'base64',
-  });
+  const outPath = `${dir}thermal-${Date.now()}.jpg`;
+  await FileSystem.writeAsStringAsync(outPath, uint8ToBase64(encBytes), { encoding: 'base64' });
   return outPath;
 }
