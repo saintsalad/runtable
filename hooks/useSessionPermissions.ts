@@ -6,6 +6,7 @@ import {
   canHostShareRoom,
   canHostViewParticipantsSheet,
   canLeaveLiveSession,
+  canLockRoster,
   canStartSessionFromLobby,
   canViewLiveStats,
 } from '@/lib/sessionPermissions';
@@ -19,11 +20,15 @@ export function useSessionPermissions() {
   const participantRunStatus = useRunTableStore(
     (s) => s.participantRuns[authUserId]?.status
   );
+  const allParticipantsReady = useRunTableStore(
+    (s) => s.participants.length > 0 && s.participants.every((p) => p.isReady)
+  );
 
   const input = {
     isEffectiveHost,
     sessionPhase,
     participantRunStatus,
+    allParticipantsReady,
   };
 
   return {
@@ -31,6 +36,7 @@ export function useSessionPermissions() {
     sessionPhase,
     participantRunStatus,
     canCancelWaitingSession: canCancelWaitingSession(input),
+    canLockRoster: canLockRoster(input),
     canStartSessionFromLobby: canStartSessionFromLobby(input),
     canCloseLiveSession: canCloseLiveSession(input),
     canControlSessionPause: canControlSessionPause(input),

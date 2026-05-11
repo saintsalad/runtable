@@ -74,6 +74,7 @@ export interface RunTableState {
     polylineId?: string;
   }) => void;
   resetLobby: () => void;
+  lockRoster: () => void;
   addParticipant: (p: Participant) => void;
   toggleReady: (id: string) => void;
   setParticipantMood: (id: string, mood: RunMood) => void;
@@ -183,6 +184,11 @@ export const useRunTableStore = create<RunTableState>()(
           roomAcceptingJoins: true,
           participantRuns: {},
           frozenPackPositions: {},
+        }),
+      lockRoster: () =>
+        set((s) => {
+          if (s.sessionPhase !== 'WAITING') return s;
+          return { sessionPhase: 'LOCKED', roomAcceptingJoins: false };
         }),
       addParticipant: (p) =>
         set((s) => {
@@ -390,21 +396,24 @@ export const useRunTableStore = create<RunTableState>()(
       },
 
       hostCancelWaitingSession: () =>
-        set({
-          currentRunId: null,
-          currentRouteName: '',
-          currentPolylineId: 'bgc_loop',
-          participants: [],
-          sessionPhase: 'WAITING',
-          roomAcceptingJoins: true,
-          participantRuns: {},
-          frozenPackPositions: {},
-          elapsedMs: 0,
-          paused: false,
-          leaderboard: [],
-          packPositions: {},
-          cheerEvents: [],
-          draftRun: null,
+        set((s) => {
+          if (s.sessionPhase !== 'WAITING' && s.sessionPhase !== 'LOCKED') return s;
+          return {
+            currentRunId: null,
+            currentRouteName: '',
+            currentPolylineId: 'bgc_loop',
+            participants: [],
+            sessionPhase: 'WAITING',
+            roomAcceptingJoins: true,
+            participantRuns: {},
+            frozenPackPositions: {},
+            elapsedMs: 0,
+            paused: false,
+            leaderboard: [],
+            packPositions: {},
+            cheerEvents: [],
+            draftRun: null,
+          };
         }),
       addCheer: (glyph) => {
         const id = `cheer-${Date.now()}`;

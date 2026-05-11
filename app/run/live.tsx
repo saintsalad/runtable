@@ -7,6 +7,7 @@ import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 
 import { LeaderboardItem } from '@/components/LeaderboardItem';
 import { HostSessionBar } from '@/components/run/HostSessionBar';
+import { LiveActionBar } from '@/components/run/LiveActionBar';
 import { PackTracker } from '@/components/run/PackTracker';
 import { Header } from '@/components/ui/Header';
 import { ThermalCard } from '@/components/ui/ThermalCard';
@@ -384,6 +385,7 @@ export default function LiveRunScreen() {
 
         {!isArchived && isLiveActive ? (
           <>
+            <LiveActionBar onRegroupPing={(label) => addCheer(`⊕ ${label}`)} />
             <View className="mt-4 flex-row flex-wrap gap-2">
               <Pressable
                 disabled={!perms.canFinishPersonalRun}

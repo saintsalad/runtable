@@ -8,14 +8,12 @@ import type { Participant } from '@/types';
 type LobbyListProps = {
   participants: Participant[];
   latestParticipantId?: string | null;
-  onToggleReady?: (id: string) => void;
   footer?: ReactElement | null;
 };
 
 export const LobbyList = memo(function LobbyList({
   participants,
   latestParticipantId,
-  onToggleReady,
   footer,
 }: LobbyListProps) {
   const renderItem = useCallback(
@@ -23,10 +21,9 @@ export const LobbyList = memo(function LobbyList({
       <RunnerCard
         item={item}
         isLatest={item.id === latestParticipantId}
-        onToggleReady={onToggleReady}
       />
     ),
-    [latestParticipantId, onToggleReady]
+    [latestParticipantId]
   );
 
   return (
@@ -35,7 +32,7 @@ export const LobbyList = memo(function LobbyList({
       keyExtractor={(item) => item.id}
       renderItem={renderItem}
       ListFooterComponent={footer}
-      contentContainerStyle={{ paddingBottom: 120 }}
+      contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 16, paddingBottom: 120 }}
       showsVerticalScrollIndicator={false}
     />
   );

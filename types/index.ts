@@ -1,4 +1,5 @@
 import type {
+  ArrivalStatus,
   DevMockRole,
   ParticipantRunSlice,
   ParticipantRunStatus,
@@ -10,6 +11,7 @@ import type {
 export type PaceZone = 'easy' | 'moderate' | 'tempo' | 'fast';
 
 export type {
+  ArrivalStatus,
   DevMockRole,
   ParticipantRunSlice,
   ParticipantRunStatus,

@@ -1,3 +1,4 @@
+import { Star } from 'lucide-react-native';
 import { useEffect } from 'react';
 import { Text, View } from 'react-native';
 import Animated, {
@@ -11,6 +12,7 @@ import Animated, {
 type ParticipantAvatarProps = {
   name: string;
   color: string;
+  textColor?: string;
   size?: 'sm' | 'md' | 'lg';
   isHost?: boolean;
   pulse?: boolean;
@@ -32,6 +34,7 @@ const SIZES = {
 export function ParticipantAvatar({
   name,
   color,
+  textColor = '#ffffff',
   size = 'md',
   isHost,
   pulse,
@@ -62,14 +65,12 @@ export function ParticipantAvatar({
         <View
           className={`${dim.box} items-center justify-center rounded-full`}
           style={{ backgroundColor: color }}>
-          <Text className={`font-bold text-white ${dim.text}`}>{initials(name)}</Text>
+          <Text className={`font-bold ${dim.text}`} style={{ fontFamily: 'IBMPlexMono_600SemiBold', color: textColor }}>{initials(name)}</Text>
         </View>
       </Animated.View>
       {isHost ? (
-        <View className="absolute -bottom-2 border border-white bg-black px-1.5 py-0.5">
-          <Text className="text-[8px] font-mono font-bold uppercase tracking-widest text-white">
-            HOST
-          </Text>
+        <View style={{ position: 'absolute', bottom: -3, right: -3, width: 14, height: 14, borderRadius: 99, backgroundColor: '#facc15', alignItems: 'center', justifyContent: 'center' }}>
+          <Star size={8} color="#000" fill="#000" strokeWidth={0} />
         </View>
       ) : null}
     </View>

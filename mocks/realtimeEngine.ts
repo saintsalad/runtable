@@ -62,9 +62,15 @@ export function startLobbySimulation(getStore: () => RunTableStore, hostId: stri
       avatarColor: colorForName(name),
       paceZone: randomPaceZone(seed),
       isHost: false,
-      isReady: seed % 3 === 0,
+      isReady: false,
     };
     store.addParticipant(newbie);
+    // Simulate participant readying up 1-3s after joining
+    const delay = 1000 + (seed % 3) * 700;
+    setTimeout(() => {
+      const s = getStore();
+      if (s.sessionPhase === 'WAITING') s.toggleReady(newbie.id);
+    }, delay);
   }, 3200);
 }
 

@@ -16,14 +16,20 @@ export interface SessionPermissionInput {
   sessionPhase: SessionPhase;
   /** Current user's run slice status; omit defaults to READY for lobby. */
   participantRunStatus?: ParticipantRunStatus;
+  /** All lobby participants; used to gate start on everyone being ready. */
+  allParticipantsReady?: boolean;
 }
 
 export function canCancelWaitingSession(i: SessionPermissionInput): boolean {
-  return i.isEffectiveHost && i.sessionPhase === 'WAITING';
+  return i.isEffectiveHost && (i.sessionPhase === 'WAITING' || i.sessionPhase === 'LOCKED');
+}
+
+export function canLockRoster(i: SessionPermissionInput): boolean {
+  return i.isEffectiveHost && i.sessionPhase === 'WAITING' && (i.allParticipantsReady ?? false);
 }
 
 export function canStartSessionFromLobby(i: SessionPermissionInput): boolean {
-  return i.isEffectiveHost && i.sessionPhase === 'WAITING';
+  return i.isEffectiveHost && i.sessionPhase === 'LOCKED';
 }
 
 export function canCloseLiveSession(i: SessionPermissionInput): boolean {
